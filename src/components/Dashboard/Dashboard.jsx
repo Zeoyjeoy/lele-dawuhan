@@ -107,11 +107,21 @@ function Dashboard() {
       console.log('Respon dari API:', data);
 
       if (response.ok && data.status === '200 OK') {
-        // Login berhasil, arahkan ke homepage
+        // Login berhasil, simpan data user ke sessionStorage
+        const userSession = {
+          id: data.payload.id,
+          username: data.payload.username,
+          token: data.payload.token,
+          loginTime: new Date().toISOString()
+        };
+        
+        // Simpan ke memory (bisa juga pakai state management seperti Context API)
+        window.userSession = userSession;
+        
         showToast("Login berhasil! Selamat datang di dashboard.", 'success');
         
         // Redirect ke halaman homepage
-        navigate('/homepage');  // Redirect ke homepage jika login berhasil
+        navigate('/homepage');
         
         // Reset form
         setUsername('');
