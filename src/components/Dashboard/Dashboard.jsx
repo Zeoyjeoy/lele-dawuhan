@@ -157,7 +157,7 @@ function Dashboard() {
           <img 
             src="/src/assets/wave.png" 
             alt="" 
-            className="absolute top-0 left-0 w-full h-full object-cover opacity-60"
+            className="absolute top-0 left-0 w-full h-full object-cover opacity-40"
           />
           <div className="absolute top-0 left-0 w-1/2 h-full"></div>
         </div>
@@ -279,11 +279,10 @@ function Dashboard() {
         <img 
           src="/src/assets/wave.png" 
           alt="" 
-          className="absolute top-0 left-0 w-full h-full object-cover opacity-60"
+          className="absolute top-0 left-0 w-full h-full object-cover opacity-40"
         />
         <div className="absolute top-0 left-0 w-1/2 h-full"></div>
       </div>
-      
       <div className="flex w-full max-w-6xl items-center justify-center relative z-10">
         {/* Left Side - Illustration */}
         <div className="hidden lg:flex lg:w-1/2 items-center justify-center">

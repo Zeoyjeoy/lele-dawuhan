@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Power, PowerOff, Edit3, Eye, AlertCircle, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import Sidebar from '../Sidebar/Sidebar';  
+import MicroController from '../MicroController/MicroController';  
+import Relay from '../Relay/Relay'; 
+import Sensor from '../Sensor/Sensor';  
+
 
 const Homepage = () => {
   const [pools, setPools] = useState([]);
@@ -12,6 +17,7 @@ const Homepage = () => {
   const [notification, setNotification] = useState(null);
   const [apiLoading, setApiLoading] = useState(false);
   const [userSession, setUserSession] = useState(null);
+  const [sidebarVisible, setSidebarVisible] = useState(true);
 
   const navigate = useNavigate();
 
@@ -30,12 +36,14 @@ const Homepage = () => {
       navigate('/');
     }
   }, [navigate]);
+  
 
   // Show notification
   const showNotification = (message, type = 'success') => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 3000);
   };
+  
 
   // Fetch all pools
   const fetchPools = async () => {
@@ -329,17 +337,6 @@ const Homepage = () => {
     return status ? 'Aktif' : 'Tidak Aktif';
   };
 
-  // Show loading if no user session yet
-  if (!userSession) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat session...</p>
-        </div>
-      </div>
-    );
-  }
 
   if (loading) {
     return (
@@ -353,7 +350,13 @@ const Homepage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+  <div className="min-h-screen bg-gray-50 flex">
+
+    {/* Sidebar */}
+    {sidebarVisible && <Sidebar />}
+
+    {/* Main Content */}
+    <div className="flex-grow p-6">
       {/* Notification */}
       {notification && (
         <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
@@ -607,7 +610,9 @@ const Homepage = () => {
         )}
       </div>
     </div>
-  );
+  </div>
+);
+
 };
 
 export default Homepage;
