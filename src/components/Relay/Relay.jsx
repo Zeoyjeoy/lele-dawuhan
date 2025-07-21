@@ -36,8 +36,7 @@ const Relay = () => {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // Fetch relays
-  const fetchRelays = async () => {
+ const fetchRelays = async () => {
     if (!userSession?.id || !userSession?.token) {
       console.log('No user session or token, cannot fetch relays');
       return;
@@ -52,7 +51,7 @@ const Relay = () => {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${userSession.token}`,
+          'Authorization': `Bearer ${userSession.token}`,  // Cek token yang digunakan
         },
       });
 
@@ -81,6 +80,7 @@ const Relay = () => {
       setApiLoading(false);
     }
   };
+
 
   // Fetch relays when userSession is available
   useEffect(() => {
