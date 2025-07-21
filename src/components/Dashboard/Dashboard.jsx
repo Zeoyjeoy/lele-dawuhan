@@ -151,66 +151,119 @@ function Dashboard() {
   // Jika sudah login, tampilkan dashboard
   if (isLogin) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-          <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">Masuk</h1>
-
-          {/* Form */}
-          <div className="space-y-6">
-            {/* Username Field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Nama Pengguna</label>
-              <input
-                type="text"
-                placeholder="Masukkan username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                disabled={loading}
+      <div className="min-h-screen bg-white flex items-center justify-center p-4 relative overflow-hidden">
+        {/* Background Wave */}
+        <div className="absolute top-0 left-0 w-full h-full">
+          <img 
+            src="/src/assets/wave.png" 
+            alt="" 
+            className="absolute top-0 left-0 w-full h-full object-cover opacity-60"
+          />
+          <div className="absolute top-0 left-0 w-1/2 h-full"></div>
+        </div>
+        
+        <div className="flex w-full max-w-6xl items-center justify-center relative z-10">
+          {/* Left Side - Illustration */}
+          <div className="hidden lg:flex lg:w-1/2 items-center justify-center">
+            <div className="relative">
+              <img 
+                src="/src/assets/bg.svg" 
+                alt="Login Illustration" 
+                className="w-96 h-96 object-contain"
               />
             </div>
+          </div>
 
-            {/* Password Field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Kata Sandi</label>
-              <input
-                type="password"
-                placeholder="Masukkan password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                disabled={loading}
-              />
-            </div>
-
-            {/* Submit Button */}
-            <button
-              onClick={handleLogin}
-              disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
-            >
-              {loading ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Masuk...
+          {/* Right Side - Login Form */}
+          <div className="w-full lg:w-1/2 flex items-center justify-center">
+            <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 w-full max-w-md border border-white/20">
+              {/* Avatar */}
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
+                  <img 
+                    src="/src/assets/avatar.svg" 
+                    alt="User Avatar" 
+                    className="w-12 h-12 object-contain"
+                  />
                 </div>
-              ) : (
-                'Masuk'
-              )}
-            </button>
+              </div>
 
-            {/* Toggle Login/Register */}
-            <div className="text-center">
-              <p className="text-gray-600">
-                Belum punya akun?{' '}
+              <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">WELCOME</h1>
+              <p className="text-center text-gray-600 mb-8">Silakan masuk ke akun Anda</p>
+
+              {/* Form */}
+              <div className="space-y-6">
+                {/* Username Field */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full px-4 py-4 pr-12 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all bg-gray-50/50 placeholder-gray-400"
+                    disabled={loading}
+                  />
+                  <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Password Field */}
+                <div className="relative">
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-4 py-4 pr-12 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all bg-gray-50/50 placeholder-gray-400"
+                    disabled={loading}
+                  />
+                  <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m0 0v2m0-2h2m-2 0H10m4-6V9a4 4 0 00-8 0v2m12 0H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2v-6a2 2 0 00-2-2z"></path>
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Forgot Password */}
+                <div className="text-right">
+                  <button className="text-sm text-gray-500 hover:text-emerald-600 transition-colors">
+                    Forgot Password?
+                  </button>
+                </div>
+
+                {/* Submit Button */}
                 <button
-                  onClick={toggleLoginRegister}
-                  className="text-blue-600 hover:text-blue-800 font-medium hover:underline"
+                  onClick={handleLogin}
                   disabled={loading}
+                  className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 disabled:from-gray-300 disabled:to-gray-400 text-white font-semibold py-4 px-4 rounded-xl transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
                 >
-                  Daftar
+                  {loading ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      LOGIN...
+                    </div>
+                  ) : (
+                    'LOGIN'
+                  )}
                 </button>
-              </p>
+
+                {/* Toggle Login/Register */}
+                <div className="text-center">
+                  <p className="text-gray-600">
+                    Belum punya akun?{' '}
+                    <button
+                      onClick={toggleLoginRegister}
+                      className="text-emerald-600 hover:text-emerald-800 font-medium hover:underline transition-colors"
+                      disabled={loading}
+                    >
+                      Daftar Sekarang
+                    </button>
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -220,79 +273,129 @@ function Dashboard() {
 
   // Tampilkan form register
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">Daftar</h1>
-
-        {/* Form */}
-        <div className="space-y-6">
-          {/* Username Field */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Nama Pengguna</label>
-            <input
-              type="text"
-              placeholder="Masukkan username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-              disabled={loading}
+    <div className="min-h-screen bg-white flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Wave */}
+      <div className="absolute top-0 left-0 w-full h-full">
+        <img 
+          src="/src/assets/wave.png" 
+          alt="" 
+          className="absolute top-0 left-0 w-full h-full object-cover opacity-60"
+        />
+        <div className="absolute top-0 left-0 w-1/2 h-full"></div>
+      </div>
+      
+      <div className="flex w-full max-w-6xl items-center justify-center relative z-10">
+        {/* Left Side - Illustration */}
+        <div className="hidden lg:flex lg:w-1/2 items-center justify-center">
+          <div className="relative">
+            <img 
+              src="/src/assets/bg.svg" 
+              alt="Register Illustration" 
+              className="w-96 h-96 object-contain"
             />
           </div>
+        </div>
 
-          {/* Password Field */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Kata Sandi</label>
-            <input
-              type="password"
-              placeholder="Masukkan password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-              disabled={loading}
-            />
-          </div>
-
-          {/* Confirm Password Field */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Ulang Kata Sandi</label>
-            <input
-              type="password"
-              placeholder="Konfirmasi password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-              disabled={loading}
-            />
-          </div>
-
-          {/* Submit Button */}
-          <button
-            onClick={handleRegister}
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
-          >
-            {loading ? (
-              <div className="flex items-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                Daftar...
+        {/* Right Side - Register Form */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center">
+          <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 w-full max-w-md border border-white/20">
+            {/* Avatar */}
+            <div className="flex justify-center mb-6">
+              <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
+                <img 
+                  src="/src/assets/avatar.svg" 
+                  alt="User Avatar" 
+                  className="w-12 h-12 object-contain"
+                />
               </div>
-            ) : (
-              'Daftar'
-            )}
-          </button>
+            </div>
 
-          {/* Toggle Login/Register */}
-          <div className="text-center">
-            <p className="text-gray-600">
-              Sudah punya akun?{' '}
+            <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">DAFTAR</h1>
+            <p className="text-center text-gray-600 mb-8">Buat akun baru untuk mulai</p>
+
+            {/* Form */}
+            <div className="space-y-6">
+              {/* Username Field */}
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full px-4 py-4 pr-12 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all bg-gray-50/50 placeholder-gray-400"
+                  disabled={loading}
+                />
+                <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                  </svg>
+                </div>
+              </div>
+
+              {/* Password Field */}
+              <div className="relative">
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-4 pr-12 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all bg-gray-50/50 placeholder-gray-400"
+                  disabled={loading}
+                />
+                <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m0 0v2m0-2h2m-2 0H10m4-6V9a4 4 0 00-8 0v2m12 0H4a2 2 0 00-2 2v6a2 2 0 002-2v-6a2 2 0 00-2-2z"></path>
+                  </svg>
+                </div>
+              </div>
+
+              {/* Confirm Password Field */}
+              <div className="relative">
+                <input
+                  type="password"
+                  placeholder="Konfirmasi Password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-4 pr-12 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all bg-gray-50/50 placeholder-gray-400"
+                  disabled={loading}
+                />
+                <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </div>
+              </div>
+
+              {/* Submit Button */}
               <button
-                onClick={toggleLoginRegister}
-                className="text-blue-600 hover:text-blue-800 font-medium hover:underline"
+                onClick={handleRegister}
                 disabled={loading}
+                className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 disabled:from-gray-300 disabled:to-gray-400 text-white font-semibold py-4 px-4 rounded-xl transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
               >
-                Masuk
+                {loading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    DAFTAR...
+                  </div>
+                ) : (
+                  'DAFTAR'
+                )}
               </button>
-            </p>
+
+              {/* Toggle Login/Register */}
+              <div className="text-center">
+                <p className="text-gray-600">
+                  Sudah punya akun?{' '}
+                  <button
+                    onClick={toggleLoginRegister}
+                    className="text-emerald-600 hover:text-emerald-800 font-medium hover:underline transition-colors"
+                    disabled={loading}
+                  >
+                    Masuk Sekarang
+                  </button>
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
