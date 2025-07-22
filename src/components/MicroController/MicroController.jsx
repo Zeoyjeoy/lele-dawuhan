@@ -11,25 +11,33 @@ const MicroController = () => {
 
   const API_BASE = 'http://43.165.198.49:8089/api/monitoring';
 
+  const navigate = useNavigate();
+
+  // Check if user session exists and set the session
   useEffect(() => {
-    const session = window.userSession;
+    const session = window.userSession; // Ensure the session is stored in window.userSession
     if (session) {
       setUserSession(session);
+      console.log('User session found:', session);
     } else {
       console.log('No user session found');
-      // Handle the redirection if session is not found
+      // Redirect to login if session not found
+      navigate('/dashboard'); // You can change this to your desired route
     }
-  }, []);
+  }, [navigate]);
 
+  // Show notifications
   const showNotification = (message, type = 'success') => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 3000);
   };
 
+  // Handle change in selected pool code
   const handleCodeChange = (e) => {
     setSelectedCode(e.target.value);
   };
 
+  // Push sensor data to the API
   const pushSensorData = async () => {
     if (!userSession?.id) {
       showNotification('User session not valid', 'error');
@@ -86,6 +94,7 @@ const MicroController = () => {
     }
   };
 
+  // Fetch sensor data based on the selected pool code
   const fetchSensorData = async () => {
     if (!userSession?.id) {
       showNotification('User session not valid', 'error');
@@ -120,6 +129,7 @@ const MicroController = () => {
     }
   };
 
+  // Fetch the latest sensor data
   const getLatestSensorData = async () => {
     if (!userSession?.id) {
       showNotification('User session not valid', 'error');
@@ -156,7 +166,7 @@ const MicroController = () => {
 
   return (
     <div className="container">
-        <Sidebar />
+      <Sidebar />
       <h1>Microcontroller Data</h1>
 
       {notification && (

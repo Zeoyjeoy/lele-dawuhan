@@ -11,6 +11,8 @@ const Relay = () => {
   const [notification, setNotification] = useState(null);
   const [apiLoading, setApiLoading] = useState(false);
   const [userSession, setUserSession] = useState(null);
+  const [pools, setPools] = useState([]); // To store available pools
+  const [selectedPool, setSelectedPool] = useState(''); // To store selected pool
 
   const navigate = useNavigate();
 
@@ -35,92 +37,7 @@ const Relay = () => {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // Check token validity
-  const checkTokenValidity = () => {
-    const token = userSession?.token;
-    if (!token) return false;
-    
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      
-      if (payload.exp) {
-        const expiration = payload.exp * 1000;
-        const now = Date.now();
-        
-        if (expiration < now) {
-          showNotification('Token sudah expired, silakan login ulang', 'error');
-          navigate('/');
-          return false;
-        }
-        
-        return expiration > now;
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Error parsing token:', error);
-      return false;
-    }
-  };
-
-  // Unified API call function
-  const makeAPICall = async (endpoint, method = 'GET', data = null, useQueryParams = false) => {
-    if (!userSession?.token) {
-      throw new Error('No authentication token');
-    }
-
-    if (!checkTokenValidity()) {
-      throw new Error('Token expired');
-    }
-
-    let url = `${API_BASE}${endpoint}`;
-    const headers = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${userSession.token}`,
-    };
-
-    const options = {
-      method,
-      headers,
-    };
-
-    // Handle query parameters vs body data
-    if (data) {
-      if (useQueryParams && method === 'GET') {
-        const params = new URLSearchParams();
-        Object.entries(data).forEach(([key, value]) => {
-          params.append(key, String(value));
-        });
-        url += `?${params.toString()}`;
-      } else if (useQueryParams && (method === 'PUT' || method === 'DELETE')) {
-        const params = new URLSearchParams();
-        Object.entries(data).forEach(([key, value]) => {
-          params.append(key, String(value));
-        });
-        url += `?${params.toString()}`;
-      } else {
-        options.body = JSON.stringify(data);
-      }
-    }
-
-    console.log(`Making ${method} request to:`, url);
-    console.log('Headers:', headers);
-    if (options.body) console.log('Body:', options.body);
-
-    const response = await fetch(url, options);
-    const responseText = await response.text();
-    
-    console.log(`Response status: ${response.status}`);
-    console.log('Response body:', responseText);
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${responseText}`);
-    }
-
-    return responseText ? JSON.parse(responseText) : {};
-  };
-
-  // Fetch all relays with fallback methods
+  // Fetch relays
   const fetchRelays = async () => {
     if (!userSession?.id) {
       console.log('No user session, cannot fetch relays');
@@ -129,29 +46,32 @@ const Relay = () => {
 
     try {
       setApiLoading(true);
-      
-      let data;
-      
-      // Try GET method first
-      try {
-        data = await makeAPICall('/select/all', 'GET', { id: userSession.id }, true);
-      } catch (error) {
-        console.log('GET method failed, trying POST method...');
-        // Fallback to POST method
-        data = await makeAPICall('/select/all', 'POST', { id: userSession.id });
+
+      const url = `${API_BASE}/select/all?id=${userSession.id}`;
+      console.log('Fetching relays from:', url);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userSession.token}`,
+        },
+      });
+
+      console.log('Response status:', response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
+      const data = await response.json();
       console.log('Relays data received:', data);
 
       if (data.status === '200 OK' && data.payload) {
-        // Normalize the relay data
-        const normalizedRelays = data.payload.map(relay => ({
-          ...relay,
-          status: normalizeStatus(relay.status || relay.val)
-        }));
-        setRelays(normalizedRelays);
+        setRelays(data.payload);
       } else {
         setRelays([]);
+        console.log('No relays found or invalid response');
       }
 
     } catch (error) {
@@ -163,14 +83,47 @@ const Relay = () => {
     }
   };
 
-  // Normalize status from various API responses
-  const normalizeStatus = (status) => {
-    if (typeof status === 'boolean') return status;
-    if (typeof status === 'string') {
-      const lowerStatus = status.toLowerCase();
-      return lowerStatus === 'true' || lowerStatus === 'on' || lowerStatus === '1';
+  // Fetch pools (kolam) for adding relay
+  const fetchPools = async () => {
+    if (!userSession?.id) {
+      console.log('No user session, cannot fetch pools');
+      return;
     }
-    return Boolean(status);
+
+    try {
+      setApiLoading(true);
+
+      const url = `http://43.165.198.49:8089/api/kolam/select/all?id=${userSession.id}`;
+      console.log('Fetching pools from:', url);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userSession.token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Pools data received:', data);
+
+      if (data.status === '200 OK' && data.payload) {
+        setPools(data.payload);
+      } else {
+        setPools([]);
+      }
+
+    } catch (error) {
+      console.error('Error fetching pools:', error);
+      setPools([]);
+      showNotification('Gagal memuat data kolam: ' + error.message, 'error');
+    } finally {
+      setApiLoading(false);
+    }
   };
 
   // Add new relay
@@ -185,33 +138,44 @@ const Relay = () => {
       return;
     }
 
+    if (!selectedPool) {
+      showNotification('Kolam harus dipilih', 'error');
+      return;
+    }
+
     try {
       setApiLoading(true);
 
-      // Ensure consistent data types based on API expectation
       const requestData = {
         code: newRelayCode.trim(),
-        iduser: String(userSession.id), // Convert to string as shown in screenshot
-        val: true, // Use 'val' instead of 'status' based on API pattern
+        iduser: String(userSession.id),
+        idkolam: selectedPool,  // Add selected pool to the request
+        status: true,
       };
 
-      console.log('Adding relay with data:', requestData);
+      const response = await fetch(`${API_BASE}/save`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userSession.token}`,
+        },
+        body: JSON.stringify(requestData)
+      });
 
-      const data = await makeAPICall('/save', 'POST', requestData);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Add relay response data:', data);
 
       if (data.status === '201 CREATED' && data.payload) {
-        // Normalize the new relay data
-        const newRelay = {
-          ...data.payload,
-          status: normalizeStatus(data.payload.status || data.payload.val)
-        };
-        
-        setRelays(prevRelays => [...prevRelays, newRelay]);
+        setRelays([...relays, data.payload]);
         setNewRelayCode('');
         setShowAddForm(false);
         showNotification('Relay berhasil ditambahkan');
       } else {
-        throw new Error('Invalid response format from server');
+        throw new Error('Invalid response format');
       }
 
     } catch (error) {
@@ -222,54 +186,30 @@ const Relay = () => {
     }
   };
 
-  // Handle relay toggle with multiple fallback methods
+  // Toggle relay status (PUT request to update relay status)
   const handleRelayToggle = async (relay) => {
-    if (!checkTokenValidity()) return;
-
     try {
       setApiLoading(true);
 
       const newStatus = !relay.status;
       console.log('Toggling relay status:', { relay, newStatus });
 
-      let data;
-      const toggleData = {
-        code: relay.code,
-        val: newStatus,
-        id: relay.id
-      };
-
-      // Try different methods in order
-      const methods = [
-        // Method 1: PUT with query parameters
-        () => makeAPICall('/updatestatus', 'PUT', toggleData, true),
-        // Method 2: PUT with body (updateValByCode endpoint)
-        () => makeAPICall('/updateValByCode', 'PUT', toggleData, true),
-        // Method 3: POST with body
-        () => makeAPICall('/updatestatus', 'POST', toggleData),
-        // Method 4: POST to updateValByCode
-        () => makeAPICall('/updateValByCode', 'POST', toggleData),
-      ];
-
-      let lastError;
-      for (const method of methods) {
-        try {
-          data = await method();
-          break; // Success, exit loop
-        } catch (error) {
-          console.log('Method failed, trying next...', error.message);
-          lastError = error;
+      const response = await fetch(`${API_BASE}/updateValByCode?code=${relay.code}&val=${newStatus}&id=${relay.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userSession.token}`, // Bearer token untuk autentikasi
         }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      if (!data) {
-        throw lastError || new Error('All toggle methods failed');
-      }
-
-      console.log('Toggle relay status response data:', data);
+      const data = await response.json();
+      console.log('Toggle relay status response:', data);
 
       if (data.status === '200 OK') {
-        // Update relay status in state
         setRelays(prevRelays =>
           prevRelays.map(r =>
             r.id === relay.id
@@ -278,11 +218,9 @@ const Relay = () => {
           )
         );
 
-        showNotification(
-          `${relay.code} ${newStatus ? 'diaktifkan' : 'dinonaktifkan'}`
-        );
+        showNotification(`${relay.code} ${newStatus ? 'diaktifkan' : 'dinonaktifkan'}`);
       } else {
-        throw new Error('Unexpected response format');
+        throw new Error('Invalid response format');
       }
 
     } catch (error) {
@@ -293,55 +231,24 @@ const Relay = () => {
     }
   };
 
-  // Get single relay with fallback methods
-  const getSingleRelay = async (code, id) => {
-    if (!checkTokenValidity()) return;
-
-    try {
-      setApiLoading(true);
-      console.log('Getting single relay:', { code, id });
-      
-      let data;
-      
-      try {
-        // Try GET method first
-        data = await makeAPICall('/select/single', 'GET', { code, id }, true);
-      } catch (error) {
-        console.log('GET single relay failed, trying POST method...');
-        // Fallback to POST method
-        data = await makeAPICall('/select/single', 'POST', { code, id });
-      }
-
-      console.log('Single relay data:', data);
-      showNotification(`Data relay ${code} berhasil dimuat`);
-      
-      // You can process the single relay data here
-      return data;
-      
-    } catch (error) {
-      console.error('Error getting single relay:', error);
-      showNotification('Gagal memuat data relay: ' + error.message, 'error');
-    } finally {
-      setApiLoading(false);
-    }
-  };
-
   // Fetch relays when userSession is available
   useEffect(() => {
     if (userSession?.id) {
       fetchRelays();
+      fetchPools();  // Fetch available pools
     }
   }, [userSession]);
 
+  // Get status color
   const getStatusColor = (status) => {
     return status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
   };
 
+  // Get status text
   const getStatusText = (status) => {
     return status ? 'Aktif' : 'Tidak Aktif';
   };
 
-  // Loading state
   if (apiLoading && relays.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -355,10 +262,8 @@ const Relay = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
       <Sidebar />
 
-      {/* Main Content */}
       <div className="flex-grow p-6">
         {/* Notification */}
         {notification && (
@@ -388,13 +293,6 @@ const Relay = () => {
               </div>
               <div className="flex items-center gap-4">
                 <button
-                  onClick={() => fetchRelays()}
-                  disabled={apiLoading}
-                  className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
-                >
-                  {apiLoading ? 'Loading...' : 'Refresh'}
-                </button>
-                <button
                   onClick={() => setShowAddForm(!showAddForm)}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
                 >
@@ -412,6 +310,27 @@ const Relay = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
               <div className="bg-gray-50 rounded-lg p-6">
                 <h3 className="text-lg font-semibold mb-4">Tambah Relay Baru</h3>
+
+                {/* Kolam List Selection */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Pilih Kolam *
+                  </label>
+                  <select
+                    value={selectedPool}
+                    onChange={(e) => setSelectedPool(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">Pilih Kolam</option>
+                    {pools.map((pool) => (
+                      <option key={pool.id} value={pool.id}>
+                        {pool.name} ({pool.code})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Kode Relay *
@@ -425,6 +344,7 @@ const Relay = () => {
                     required
                   />
                 </div>
+
                 <div className="flex gap-2 mt-4">
                   <button
                     onClick={handleAddRelay}
@@ -489,18 +409,14 @@ const Relay = () => {
                         <input
                           type="checkbox"
                           checked={selectedRelays.includes(relay.id)}
-                          onChange={() => setSelectedRelays(prev => 
-                            prev.includes(relay.id) 
-                              ? prev.filter(id => id !== relay.id) 
-                              : [...prev, relay.id]
-                          )}
+                          onChange={() => setSelectedRelays(prev => prev.includes(relay.id) ? prev.filter(id => id !== relay.id) : [...prev, relay.id])}
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                         />
                         <div>
                           <h3 className="font-semibold text-gray-900">
                             {relay.code}
                           </h3>
-                          <p className="text-sm text-gray-600">ID: {relay.id}</p>
+                          <p className="text-sm text-gray-600">{relay.code}</p>
                         </div>
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(relay.status)}`}>
