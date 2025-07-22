@@ -25,7 +25,6 @@ const Relay = () => {
       console.log('User session found:', session);
     } else {
       console.log('No user session found');
-      // Redirect to login if no session
       navigate('/');
     }
   }, [navigate]);
@@ -36,40 +35,123 @@ const Relay = () => {
     setTimeout(() => setNotification(null), 3000);
   };
 
- const fetchRelays = async () => {
-    if (!userSession?.id || !userSession?.token) {
-      console.log('No user session or token, cannot fetch relays');
+  // Check token validity
+  const checkTokenValidity = () => {
+    const token = userSession?.token;
+    if (!token) return false;
+    
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      
+      if (payload.exp) {
+        const expiration = payload.exp * 1000;
+        const now = Date.now();
+        
+        if (expiration < now) {
+          showNotification('Token sudah expired, silakan login ulang', 'error');
+          navigate('/');
+          return false;
+        }
+        
+        return expiration > now;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error parsing token:', error);
+      return false;
+    }
+  };
+
+  // Unified API call function
+  const makeAPICall = async (endpoint, method = 'GET', data = null, useQueryParams = false) => {
+    if (!userSession?.token) {
+      throw new Error('No authentication token');
+    }
+
+    if (!checkTokenValidity()) {
+      throw new Error('Token expired');
+    }
+
+    let url = `${API_BASE}${endpoint}`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${userSession.token}`,
+    };
+
+    const options = {
+      method,
+      headers,
+    };
+
+    // Handle query parameters vs body data
+    if (data) {
+      if (useQueryParams && method === 'GET') {
+        const params = new URLSearchParams();
+        Object.entries(data).forEach(([key, value]) => {
+          params.append(key, String(value));
+        });
+        url += `?${params.toString()}`;
+      } else if (useQueryParams && (method === 'PUT' || method === 'DELETE')) {
+        const params = new URLSearchParams();
+        Object.entries(data).forEach(([key, value]) => {
+          params.append(key, String(value));
+        });
+        url += `?${params.toString()}`;
+      } else {
+        options.body = JSON.stringify(data);
+      }
+    }
+
+    console.log(`Making ${method} request to:`, url);
+    console.log('Headers:', headers);
+    if (options.body) console.log('Body:', options.body);
+
+    const response = await fetch(url, options);
+    const responseText = await response.text();
+    
+    console.log(`Response status: ${response.status}`);
+    console.log('Response body:', responseText);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${responseText}`);
+    }
+
+    return responseText ? JSON.parse(responseText) : {};
+  };
+
+  // Fetch all relays with fallback methods
+  const fetchRelays = async () => {
+    if (!userSession?.id) {
+      console.log('No user session, cannot fetch relays');
       return;
     }
 
     try {
       setApiLoading(true);
-      const url = `${API_BASE}/select/all?id=${userSession.id}`;
-      console.log('Fetching relays from:', url);
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${userSession.token}`,  // Cek token yang digunakan
-        },
-      });
-
-      console.log('Response status:', response.status);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      
+      let data;
+      
+      // Try GET method first
+      try {
+        data = await makeAPICall('/select/all', 'GET', { id: userSession.id }, true);
+      } catch (error) {
+        console.log('GET method failed, trying POST method...');
+        // Fallback to POST method
+        data = await makeAPICall('/select/all', 'POST', { id: userSession.id });
       }
 
-      const data = await response.json();
       console.log('Relays data received:', data);
 
       if (data.status === '200 OK' && data.payload) {
-        setRelays(data.payload);
-        console.log('Relays set:', data.payload);
+        // Normalize the relay data
+        const normalizedRelays = data.payload.map(relay => ({
+          ...relay,
+          status: normalizeStatus(relay.status || relay.val)
+        }));
+        setRelays(normalizedRelays);
       } else {
         setRelays([]);
-        console.log('No relays found or invalid response');
       }
 
     } catch (error) {
@@ -81,13 +163,15 @@ const Relay = () => {
     }
   };
 
-
-  // Fetch relays when userSession is available
-  useEffect(() => {
-    if (userSession?.id) {
-      fetchRelays();
+  // Normalize status from various API responses
+  const normalizeStatus = (status) => {
+    if (typeof status === 'boolean') return status;
+    if (typeof status === 'string') {
+      const lowerStatus = status.toLowerCase();
+      return lowerStatus === 'true' || lowerStatus === 'on' || lowerStatus === '1';
     }
-  }, [userSession]);
+    return Boolean(status);
+  };
 
   // Add new relay
   const handleAddRelay = async () => {
@@ -104,39 +188,30 @@ const Relay = () => {
     try {
       setApiLoading(true);
 
+      // Ensure consistent data types based on API expectation
       const requestData = {
         code: newRelayCode.trim(),
-        iduser: userSession.id.toString(),
-        status: true,  // Assume relay should be active when added
+        iduser: String(userSession.id), // Convert to string as shown in screenshot
+        val: true, // Use 'val' instead of 'status' based on API pattern
       };
 
       console.log('Adding relay with data:', requestData);
 
-      const response = await fetch(`${API_BASE}/save`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${userSession.token}`,
-        },
-        body: JSON.stringify(requestData)
-      });
-
-      console.log('Add relay response status:', response.status);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Add relay response data:', data);
+      const data = await makeAPICall('/save', 'POST', requestData);
 
       if (data.status === '201 CREATED' && data.payload) {
-        setRelays([...relays, data.payload]);
+        // Normalize the new relay data
+        const newRelay = {
+          ...data.payload,
+          status: normalizeStatus(data.payload.status || data.payload.val)
+        };
+        
+        setRelays(prevRelays => [...prevRelays, newRelay]);
         setNewRelayCode('');
         setShowAddForm(false);
         showNotification('Relay berhasil ditambahkan');
       } else {
-        throw new Error('Invalid response format');
+        throw new Error('Invalid response format from server');
       }
 
     } catch (error) {
@@ -147,43 +222,67 @@ const Relay = () => {
     }
   };
 
-  // Handle relay toggle (active/inactive)
+  // Handle relay toggle with multiple fallback methods
   const handleRelayToggle = async (relay) => {
+    if (!checkTokenValidity()) return;
+
     try {
       setApiLoading(true);
 
       const newStatus = !relay.status;
       console.log('Toggling relay status:', { relay, newStatus });
 
-      const response = await fetch(`${API_BASE}/updatestatus?code=${relay.code}&val=${newStatus}&id=${relay.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${userSession.token}`,
+      let data;
+      const toggleData = {
+        code: relay.code,
+        val: newStatus,
+        id: relay.id
+      };
+
+      // Try different methods in order
+      const methods = [
+        // Method 1: PUT with query parameters
+        () => makeAPICall('/updatestatus', 'PUT', toggleData, true),
+        // Method 2: PUT with body (updateValByCode endpoint)
+        () => makeAPICall('/updateValByCode', 'PUT', toggleData, true),
+        // Method 3: POST with body
+        () => makeAPICall('/updatestatus', 'POST', toggleData),
+        // Method 4: POST to updateValByCode
+        () => makeAPICall('/updateValByCode', 'POST', toggleData),
+      ];
+
+      let lastError;
+      for (const method of methods) {
+        try {
+          data = await method();
+          break; // Success, exit loop
+        } catch (error) {
+          console.log('Method failed, trying next...', error.message);
+          lastError = error;
         }
-      });
-
-      console.log('Toggle relay status response:', response.status);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      if (!data) {
+        throw lastError || new Error('All toggle methods failed');
+      }
+
       console.log('Toggle relay status response data:', data);
 
       if (data.status === '200 OK') {
-        setRelays(relays.map(r =>
-          r.id === relay.id
-            ? { ...r, status: newStatus }
-            : r
-        ));
+        // Update relay status in state
+        setRelays(prevRelays =>
+          prevRelays.map(r =>
+            r.id === relay.id
+              ? { ...r, status: newStatus }
+              : r
+          )
+        );
 
         showNotification(
           `${relay.code} ${newStatus ? 'diaktifkan' : 'dinonaktifkan'}`
         );
       } else {
-        throw new Error('Invalid response format');
+        throw new Error('Unexpected response format');
       }
 
     } catch (error) {
@@ -194,6 +293,46 @@ const Relay = () => {
     }
   };
 
+  // Get single relay with fallback methods
+  const getSingleRelay = async (code, id) => {
+    if (!checkTokenValidity()) return;
+
+    try {
+      setApiLoading(true);
+      console.log('Getting single relay:', { code, id });
+      
+      let data;
+      
+      try {
+        // Try GET method first
+        data = await makeAPICall('/select/single', 'GET', { code, id }, true);
+      } catch (error) {
+        console.log('GET single relay failed, trying POST method...');
+        // Fallback to POST method
+        data = await makeAPICall('/select/single', 'POST', { code, id });
+      }
+
+      console.log('Single relay data:', data);
+      showNotification(`Data relay ${code} berhasil dimuat`);
+      
+      // You can process the single relay data here
+      return data;
+      
+    } catch (error) {
+      console.error('Error getting single relay:', error);
+      showNotification('Gagal memuat data relay: ' + error.message, 'error');
+    } finally {
+      setApiLoading(false);
+    }
+  };
+
+  // Fetch relays when userSession is available
+  useEffect(() => {
+    if (userSession?.id) {
+      fetchRelays();
+    }
+  }, [userSession]);
+
   const getStatusColor = (status) => {
     return status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
   };
@@ -202,8 +341,8 @@ const Relay = () => {
     return status ? 'Aktif' : 'Tidak Aktif';
   };
 
-  // Notification and Loading handling
-  if (apiLoading) {
+  // Loading state
+  if (apiLoading && relays.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -248,6 +387,13 @@ const Relay = () => {
                 <p className="text-gray-600 mt-1">Kelola dan pantau status relay Anda</p>
               </div>
               <div className="flex items-center gap-4">
+                <button
+                  onClick={() => fetchRelays()}
+                  disabled={apiLoading}
+                  className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  {apiLoading ? 'Loading...' : 'Refresh'}
+                </button>
                 <button
                   onClick={() => setShowAddForm(!showAddForm)}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
@@ -343,14 +489,18 @@ const Relay = () => {
                         <input
                           type="checkbox"
                           checked={selectedRelays.includes(relay.id)}
-                          onChange={() => setSelectedRelays(prev => prev.includes(relay.id) ? prev.filter(id => id !== relay.id) : [...prev, relay.id])}
+                          onChange={() => setSelectedRelays(prev => 
+                            prev.includes(relay.id) 
+                              ? prev.filter(id => id !== relay.id) 
+                              : [...prev, relay.id]
+                          )}
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                         />
                         <div>
                           <h3 className="font-semibold text-gray-900">
                             {relay.code}
                           </h3>
-                          <p className="text-sm text-gray-600">{relay.code}</p>
+                          <p className="text-sm text-gray-600">ID: {relay.id}</p>
                         </div>
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(relay.status)}`}>
