@@ -25,3 +25,12 @@ Ikuti langkah-langkah berikut untuk menyiapkan proyek di lingkungan pengembangan
    ```bash
    git clone https://github.com/Zeoyjeoy/lele-dawuhan.git
    cd lele-dawuhan
+2. **Install Dependencies**:
+
+   ```bash
+   npm install
+3. **JalankanDevelopment Server**
+
+   ```bash
+   npm run dev
+   
