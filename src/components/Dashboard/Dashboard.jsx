@@ -155,7 +155,7 @@ function Dashboard() {
         {/* Background Wave */}
         <div className="absolute top-0 left-0 w-full h-full">
           <img 
-            src="/src/assets/wave.png" 
+            src="/assets/wave.png" 
             alt="" 
             className="absolute top-0 left-0 w-full h-full object-cover opacity-40"
           />
@@ -167,7 +167,7 @@ function Dashboard() {
           <div className="hidden lg:flex lg:w-1/2 items-center justify-center">
             <div className="relative">
               <img 
-                src="/src/assets/bg.svg" 
+                src="/assets/bg.svg" 
                 alt="Login Illustration" 
                 className="w-96 h-96 object-contain"
               />
@@ -181,7 +181,7 @@ function Dashboard() {
               <div className="flex justify-center mb-6">
                 <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
                   <img 
-                    src="/src/assets/avatar.svg" 
+                    src="/assets/avatar.svg" 
                     alt="User Avatar" 
                     className="w-12 h-12 object-contain"
                   />
@@ -277,7 +277,7 @@ function Dashboard() {
       {/* Background Wave */}
       <div className="absolute top-0 left-0 w-full h-full">
         <img 
-          src="/src/assets/wave.png" 
+          src="/assets/wave.png" 
           alt="" 
           className="absolute top-0 left-0 w-full h-full object-cover opacity-40"
         />
@@ -288,7 +288,7 @@ function Dashboard() {
         <div className="hidden lg:flex lg:w-1/2 items-center justify-center">
           <div className="relative">
             <img 
-              src="/src/assets/bg.svg" 
+              src="/assets/bg.svg" 
               alt="Register Illustration" 
               className="w-96 h-96 object-contain"
             />
@@ -302,7 +302,7 @@ function Dashboard() {
             <div className="flex justify-center mb-6">
               <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
                 <img 
-                  src="/src/assets/avatar.svg" 
+                  src="/assets/avatar.svg" 
                   alt="User Avatar" 
                   className="w-12 h-12 object-contain"
                 />
