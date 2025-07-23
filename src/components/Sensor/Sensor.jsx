@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ArrowLeft, RefreshCw, TrendingUp, Battery, Zap, Activity, Database } from "lucide-react"
+import { ArrowLeft, RefreshCw, TrendingUp, Battery, Zap, Activity, Database, Thermometer, Droplets } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../Sidebar/Sidebar"
 
-// Simple Chart Component (same as before)
+// Simple Chart Component
 const SimpleLineChart = ({ data, dataKey, color, title, unit = "" }) => {
   if (!data || data.length === 0) return <div className="text-gray-500">No data available</div>
 
@@ -54,28 +54,42 @@ const Sensor = () => {
   const [userSession, setUserSession] = useState(null)
   const [sidebarVisible, setSidebarVisible] = useState(true)
   const [activeTab, setActiveTab] = useState("realtime")
-  const [useMockData, setUseMockData] = useState(false) // Toggle for mock data
+  const [useMockData, setUseMockData] = useState(false)
   const navigate = useNavigate()
 
   // API Base URLs
   const SENSOR_API_BASE = "http://43.165.198.49:8089/api/monitoring/sensors"
   const POOL_API_BASE = "http://43.165.198.49:8089/api/kolam"
 
-  // Mock Data Generator
+  // Enhanced Mock Data Generator with ALL fields
   const generateMockSensorData = () => {
     const now = new Date()
     return {
       id: Math.floor(Math.random() * 1000),
       timestamp: now.toISOString(),
+      // Solar Panel
       pvVoltage: (12 + Math.random() * 2).toFixed(1), // 12-14V
       pvCurrent: (1 + Math.random() * 0.5).toFixed(1), // 1-1.5A
       pvPower: (15 + Math.random() * 5).toFixed(1), // 15-20W
+      // Battery
       battVoltage: (11.5 + Math.random() * 1).toFixed(1), // 11.5-12.5V
       battChCurrent: (0.8 + Math.random() * 0.4).toFixed(1), // 0.8-1.2A
       battChPower: (10 + Math.random() * 3).toFixed(1), // 10-13W
+      battDischCurrent: (0.1 + Math.random() * 0.3).toFixed(1), // 0.1-0.4A (NEW)
+      battTemp: (25 + Math.random() * 10).toFixed(1), // 25-35°C (NEW)
+      battPercentage: (70 + Math.random() * 25).toFixed(0), // 70-95%
+      // Load
       loadCurrent: (0.3 + Math.random() * 0.4).toFixed(1), // 0.3-0.7A
       loadPower: (4 + Math.random() * 3).toFixed(1), // 4-7W
-      battPercentage: (70 + Math.random() * 25).toFixed(0), // 70-95%
+      // Environment
+      envTemp: (26 + Math.random() * 6).toFixed(1), // 26-32°C (NEW)
+      // Bioflok Parameters
+      phBioflok: (6.5 + Math.random() * 1.5).toFixed(1), // 6.5-8.0 pH (NEW)
+      tempBioflok: (27 + Math.random() * 4).toFixed(1), // 27-31°C (NEW)
+      doBioflok: (5 + Math.random() * 3).toFixed(1), // 5-8 mg/L (NEW)
+      // Meta
+      code: selectedPool,
+      iduser: userSession?.id || "8",
     }
   }
 
@@ -84,7 +98,7 @@ const Sensor = () => {
     const now = new Date()
 
     for (let i = 23; i >= 0; i--) {
-      const timestamp = new Date(now.getTime() - i * 60 * 60 * 1000) // Every hour for 24 hours
+      const timestamp = new Date(now.getTime() - i * 60 * 60 * 1000)
       const baseData = generateMockSensorData()
       data.push({
         ...baseData,
@@ -146,7 +160,6 @@ const Sensor = () => {
       setRefreshing(true)
 
       if (useMockData) {
-        // Use mock data
         console.log("Using mock data for latest sensor")
         setTimeout(() => {
           setLatestData(generateMockSensorData())
@@ -191,7 +204,6 @@ const Sensor = () => {
       setLoading(true)
 
       if (useMockData) {
-        // Use mock data
         console.log("Using mock data for historical sensor")
         setTimeout(() => {
           setHistoricalData(generateMockHistoricalData())
@@ -288,6 +300,27 @@ const Sensor = () => {
     if (percentage >= 80) return "🔋"
     if (percentage >= 50) return "🔋"
     return "🪫"
+  }
+
+  // pH Status Color
+  const getPhStatusColor = (ph) => {
+    if (ph >= 7.0 && ph <= 8.0) return "text-green-600" // Optimal
+    if (ph >= 6.5 && ph < 7.0) return "text-yellow-600" // Acceptable
+    return "text-red-600" // Critical
+  }
+
+  // DO Status Color
+  const getDoStatusColor = (doValue) => {
+    if (doValue >= 6.0) return "text-green-600" // Good
+    if (doValue >= 4.0) return "text-yellow-600" // Acceptable
+    return "text-red-600" // Critical
+  }
+
+  // Temperature Status Color
+  const getTempStatusColor = (temp) => {
+    if (temp >= 28 && temp <= 30) return "text-green-600" // Optimal
+    if (temp >= 26 && temp <= 32) return "text-yellow-600" // Acceptable
+    return "text-red-600" // Critical
   }
 
   if (loading && !latestData) {
@@ -461,7 +494,7 @@ const Sensor = () => {
                     </div>
                   </div>
 
-                  {/* Battery Metrics */}
+                  {/* Battery Metrics - ENHANCED */}
                   <div className="bg-white rounded-lg shadow-sm border p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-semibold text-gray-900">Baterai</h3>
@@ -477,8 +510,14 @@ const Sensor = () => {
                         <span className="font-medium">{formatValue(latestData.battChCurrent, "A")}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Daya Charge:</span>
-                        <span className="font-medium">{formatValue(latestData.battChPower, "W")}</span>
+                        <span className="text-gray-600">Arus Discharge:</span>
+                        <span className="font-medium text-orange-600">
+                          {formatValue(latestData.battDischCurrent, "A")}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Suhu Baterai:</span>
+                        <span className="font-medium">{formatValue(latestData.battTemp, "°C")}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Persentase:</span>
@@ -509,6 +548,76 @@ const Sensor = () => {
                         <span className="font-medium text-sm">
                           {latestData.timestamp ? new Date(latestData.timestamp).toLocaleString("id-ID") : "N/A"}
                         </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Environment Metrics - NEW */}
+                  <div className="bg-white rounded-lg shadow-sm border p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Lingkungan</h3>
+                      <Thermometer className="text-orange-500" size={24} />
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Suhu Lingkungan:</span>
+                        <span className="font-medium">{formatValue(latestData.envTemp, "°C")}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Status:</span>
+                        <span className={`font-medium ${getTempStatusColor(latestData.envTemp)}`}>
+                          {latestData.envTemp >= 26 && latestData.envTemp <= 32 ? "Normal" : "Perlu Perhatian"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bioflok Water Quality - NEW */}
+                  <div className="bg-white rounded-lg shadow-sm border p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Kualitas Air</h3>
+                      <Droplets className="text-cyan-500" size={24} />
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">pH Bioflok:</span>
+                        <span className={`font-medium ${getPhStatusColor(latestData.phBioflok)}`}>
+                          {formatValue(latestData.phBioflok)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Suhu Air:</span>
+                        <span className={`font-medium ${getTempStatusColor(latestData.tempBioflok)}`}>
+                          {formatValue(latestData.tempBioflok, "°C")}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">DO (Oksigen):</span>
+                        <span className={`font-medium ${getDoStatusColor(latestData.doBioflok)}`}>
+                          {formatValue(latestData.doBioflok, " mg/L")}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* System Status Summary - NEW */}
+                  <div className="bg-white rounded-lg shadow-sm border p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Status Sistem</h3>
+                      <Activity className="text-green-500" size={24} />
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Kode Kolam:</span>
+                        <span className="font-medium">{latestData.code}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">User ID:</span>
+                        <span className="font-medium">{latestData.iduser}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Status Keseluruhan:</span>
+                        <span className="font-medium text-green-600">🟢 Normal</span>
                       </div>
                     </div>
                   </div>
@@ -566,6 +675,76 @@ const Sensor = () => {
                     </div>
                   </div>
 
+                  {/* Temperature Charts - NEW */}
+                  <div className="bg-white rounded-lg shadow-sm border p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Grafik Suhu (Temperature)</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <SimpleLineChart
+                        data={historicalData}
+                        dataKey="envTemp"
+                        color="#f97316"
+                        title="Suhu Lingkungan"
+                        unit="°C"
+                      />
+                      <SimpleLineChart
+                        data={historicalData}
+                        dataKey="tempBioflok"
+                        color="#06b6d4"
+                        title="Suhu Air Bioflok"
+                        unit="°C"
+                      />
+                      <SimpleLineChart
+                        data={historicalData}
+                        dataKey="battTemp"
+                        color="#8b5cf6"
+                        title="Suhu Baterai"
+                        unit="°C"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Water Quality Charts - NEW */}
+                  <div className="bg-white rounded-lg shadow-sm border p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Kualitas Air Bioflok</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <SimpleLineChart
+                        data={historicalData}
+                        dataKey="phBioflok"
+                        color="#10b981"
+                        title="pH Bioflok"
+                        unit=""
+                      />
+                      <SimpleLineChart
+                        data={historicalData}
+                        dataKey="doBioflok"
+                        color="#3b82f6"
+                        title="Dissolved Oxygen"
+                        unit=" mg/L"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Battery Enhanced Charts */}
+                  <div className="bg-white rounded-lg shadow-sm border p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Monitoring Baterai Lengkap</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <SimpleLineChart
+                        data={historicalData}
+                        dataKey="battPercentage"
+                        color="#10b981"
+                        title="Persentase Baterai"
+                        unit="%"
+                      />
+                      <SimpleLineChart
+                        data={historicalData}
+                        dataKey="battDischCurrent"
+                        color="#ef4444"
+                        title="Arus Discharge"
+                        unit="A"
+                      />
+                    </div>
+                  </div>
+
                   {/* Voltage Chart */}
                   <div className="bg-white rounded-lg shadow-sm border p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Grafik Tegangan (Voltage)</h3>
@@ -585,18 +764,6 @@ const Sensor = () => {
                         unit="V"
                       />
                     </div>
-                  </div>
-
-                  {/* Battery Percentage Chart */}
-                  <div className="bg-white rounded-lg shadow-sm border p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Persentase Baterai</h3>
-                    <SimpleLineChart
-                      data={historicalData}
-                      dataKey="battPercentage"
-                      color="#10b981"
-                      title="Persentase Baterai"
-                      unit="%"
-                    />
                   </div>
 
                   {/* Current Chart */}
