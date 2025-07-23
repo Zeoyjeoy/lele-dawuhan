@@ -41,7 +41,7 @@ const MicroController = () => {
 
   const navigate = useNavigate()
 
-  // API Base URLs - FIXED ✅
+  // API Base URLs - CORRECTED ENDPOINTS
   const MICRO_SENSOR_API = "http://43.165.198.49:8089/api/monitoring/micro/sensors"
   const MICRO_RELAY_API = "http://43.165.198.49:8089/api/control/micro/getByCode"
   const POOL_API_BASE = "http://43.165.198.49:8089/api/kolam"
@@ -119,7 +119,7 @@ const MicroController = () => {
     })
   }
 
-  // Send sensor data to server (POST) - FIXED ✅
+  // Send sensor data to server (POST) - FIXED ENDPOINT
   const sendSensorData = async () => {
     if (!selectedPool) {
       showNotification("Pilih kolam terlebih dahulu", "error")
@@ -159,13 +159,13 @@ const MicroController = () => {
       if (!response.ok) {
         const errorText = await response.text()
         console.log("Error response:", errorText)
-        throw new Error(`HTTP ${response.status}: ${errorText}`)
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`)
       }
 
       const data = await response.json()
       console.log("Response data:", data)
 
-      // Check for success response
+      // Check for different success response formats
       if (data.status === "success" || data.message === "Data berhasil disimpan") {
         showNotification("✅ Data sensor berhasil dikirim ke server!")
         setConnectionStatus("connected")
@@ -186,7 +186,7 @@ const MicroController = () => {
     }
   }
 
-  // Get relay status from microcontroller (GET) - FIXED ✅
+  // Get relay status from microcontroller (GET) - FIXED ENDPOINT
   const getRelayStatus = async () => {
     if (!selectedPool) {
       showNotification("Pilih kolam terlebih dahulu", "error")
@@ -218,13 +218,12 @@ const MicroController = () => {
       if (!response.ok) {
         const errorText = await response.text()
         console.log("Relay error response:", errorText)
-        throw new Error(`HTTP ${response.status}: ${errorText}`)
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`)
       }
 
       const data = await response.json()
       console.log("Relay response data:", data)
 
-      // Check response format based on your screenshot
       if (data.status === "200 OK" && data.payload) {
         setRelayData(data.payload)
         showNotification(`✅ Relay ${data.payload.code} ditemukan! Status: ${data.payload.val ? "ON" : "OFF"}`)
@@ -398,7 +397,10 @@ const MicroController = () => {
             <div className="space-y-6">
               <div className="bg-white rounded-lg shadow-sm border p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900">Push Data Sensor ke Server</h3>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Push Data Sensor ke Server</h3>
+                    <p className="text-sm text-gray-600 mt-1">Endpoint: {MICRO_SENSOR_API}</p>
+                  </div>
                   <div className="flex gap-2">
                     <button
                       onClick={generateSampleData}
@@ -414,13 +416,6 @@ const MicroController = () => {
                       <Send size={16} />
                       {loading ? "Mengirim..." : "Kirim Data"}
                     </button>
-                  </div>
-                </div>
-
-                {/* API Endpoint Info */}
-                <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-                  <div className="text-sm text-blue-700">
-                    <strong>POST:</strong> {MICRO_SENSOR_API}
                   </div>
                 </div>
 
@@ -619,7 +614,10 @@ const MicroController = () => {
             <div className="space-y-6">
               <div className="bg-white rounded-lg shadow-sm border p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900">Get Relay Status dari MicroController</h3>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Get Relay Status dari MicroController</h3>
+                    <p className="text-sm text-gray-600 mt-1">Endpoint: {MICRO_RELAY_API}</p>
+                  </div>
                   <button
                     onClick={getRelayStatus}
                     disabled={relayLoading || !selectedPool}
@@ -630,17 +628,10 @@ const MicroController = () => {
                   </button>
                 </div>
 
-                {/* API Endpoint Info */}
-                <div className="mb-4 p-3 bg-green-50 rounded-lg">
-                  <div className="text-sm text-green-700">
-                    <strong>GET:</strong> {MICRO_RELAY_API}?code={selectedPool}&iduser={userSession?.id}
-                  </div>
-                </div>
-
                 {/* Relay Status Display */}
                 {relayData ? (
                   <div className="bg-gray-50 rounded-lg p-6">
-                    <h4 className="font-medium text-gray-900 mb-4">Status Relay Ditemukan:</h4>
+                    <h4 className="font-medium text-gray-900 mb-4">✅ Status Relay Ditemukan:</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                       <div className="bg-white p-4 rounded-lg border">
                         <div className="text-sm text-gray-600">Kode Relay</div>
