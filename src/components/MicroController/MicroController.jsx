@@ -1,9 +1,25 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ArrowLeft, RefreshCw, Send, Cpu, Zap, Database, CheckCircle, AlertCircle, Wifi, WifiOff } from "lucide-react"
+import {
+  ArrowLeft,
+  RefreshCw,
+  Send,
+  Cpu,
+  Zap,
+  Database,
+  CheckCircle,
+  AlertCircle,
+  Wifi,
+  WifiOff,
+  Battery,
+  Sun,
+  Droplets,
+  Power,
+} from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../Sidebar/Sidebar"
+import "./MicroController.css"
 
 const MicroController = () => {
   const [pools, setPools] = useState([])
@@ -58,7 +74,7 @@ const MicroController = () => {
     }
   }, [navigate])
 
-  // Show notification
+  // Enhanced notification with animations
   const showNotification = (message, type = "success") => {
     setNotification({ message, type })
     setTimeout(() => setNotification(null), 5000)
@@ -169,7 +185,6 @@ const MicroController = () => {
       if (data.status === "success" || data.message === "Data berhasil disimpan") {
         showNotification("✅ Data sensor berhasil dikirim ke server!")
         setConnectionStatus("connected")
-
         // Auto disconnect after 3 seconds
         setTimeout(() => {
           setConnectionStatus("disconnected")
@@ -228,7 +243,6 @@ const MicroController = () => {
         setRelayData(data.payload)
         showNotification(`✅ Relay ${data.payload.code} ditemukan! Status: ${data.payload.val ? "ON" : "OFF"}`)
         setConnectionStatus("connected")
-
         // Auto disconnect after 3 seconds
         setTimeout(() => {
           setConnectionStatus("disconnected")
@@ -272,7 +286,7 @@ const MicroController = () => {
   const getConnectionIcon = () => {
     switch (connectionStatus) {
       case "connected":
-        return <Wifi className="text-green-500" size={20} />
+        return <Wifi className="text-lime-500" size={20} />
       case "connecting":
         return <RefreshCw className="text-blue-500 animate-spin" size={20} />
       default:
@@ -291,63 +305,87 @@ const MicroController = () => {
     }
   }
 
+  const getConnectionStatusColor = () => {
+    switch (connectionStatus) {
+      case "connected":
+        return "bg-gradient-to-r from-lime-100 to-green-100 border-lime-300"
+      case "connecting":
+        return "bg-gradient-to-r from-blue-100 to-cyan-100 border-blue-300"
+      default:
+        return "bg-gradient-to-r from-gray-100 to-gray-200 border-gray-300"
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-lime-50 via-green-50 to-emerald-50 flex">
       {/* Sidebar */}
       {sidebarVisible && <Sidebar />}
 
       {/* Main Content */}
-      <div className="flex-grow p-6">
-        {/* Notification */}
+      <div className="flex-grow">
+        {/* Enhanced Notification */}
         {notification && (
           <div
-            className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-md ${
+            className={`fixed top-6 right-6 z-50 p-4 rounded-xl shadow-2xl border-l-4 animate-slideInFromRight max-w-md ${
               notification.type === "success"
-                ? "bg-green-100 border border-green-400 text-green-700"
-                : "bg-red-100 border border-red-400 text-red-700"
+                ? "bg-gradient-to-r from-lime-50 to-green-50 border-lime-400 text-green-800"
+                : "bg-gradient-to-r from-red-50 to-pink-50 border-red-400 text-red-800"
             }`}
           >
-            <div className="flex items-center gap-2">
-              {notification.type === "success" ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
-              <span className="text-sm">{notification.message}</span>
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-full ${notification.type === "success" ? "bg-lime-100" : "bg-red-100"}`}>
+                {notification.type === "success" ? (
+                  <CheckCircle size={20} className="text-green-600" />
+                ) : (
+                  <AlertCircle size={20} className="text-red-600" />
+                )}
+              </div>
+              <div>
+                <p className="font-semibold text-sm">{notification.message}</p>
+                <p className="text-xs opacity-75 mt-1">
+                  {notification.type === "success" ? "Berhasil!" : "Terjadi kesalahan"}
+                </p>
+              </div>
             </div>
           </div>
         )}
 
         {/* Header */}
-        <div className="bg-white shadow-sm border-b mb-6">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-6">
-              <div className="flex items-center gap-4">
+        <div className="bg-gradient-to-r from-lime-400 via-green-400 to-emerald-400 shadow-xl">
+          <div className="max-w-7xl mx-auto px-6 lg:px-8">
+            <div className="flex justify-between items-center py-8">
+              <div className="flex items-center gap-6 animate-slideInFromLeft">
                 <button
                   onClick={() => navigate("/homepage")}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-3 hover:bg-white/20 rounded-xl transition-all duration-300 transform hover:scale-110"
                 >
-                  <ArrowLeft size={20} className="text-gray-600" />
+                  <ArrowLeft size={24} className="text-white" />
                 </button>
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">MicroController</h1>
-                  <p className="text-gray-600 mt-1">Kelola komunikasi dengan microcontroller IoT</p>
+                  <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg flex items-center gap-3">
+                    <Cpu size={36} />
+                    MicroController
+                  </h1>
+                  <p className="text-lime-100 text-lg">Kelola komunikasi dengan microcontroller IoT</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
+
+              <div className="flex items-center gap-4 animate-slideInFromRight">
                 {/* Connection Status */}
-                <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg">
+                <div
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 ${getConnectionStatusColor()} ${
+                    connectionStatus === "connected" ? "connection-pulse" : ""
+                  }`}
+                >
                   {getConnectionIcon()}
-                  <span className="text-sm font-medium">{getConnectionText()}</span>
+                  <span className="font-semibold">{getConnectionText()}</span>
                 </div>
 
-                {/* Debug Info */}
-                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg">
-                  <span className="text-xs text-blue-700">
-                    User: {userSession?.id || "N/A"} | Token: {userSession?.token ? "✅" : "❌"}
-                  </span>
-                </div>
-
+                {/* Pool Selector */}
                 <select
                   value={selectedPool}
                   onChange={(e) => setSelectedPool(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-4 py-3 border-2 border-white/30 rounded-xl focus:outline-none focus:ring-4 focus:ring-white/20 focus:border-white/50 bg-white/90 backdrop-blur-sm font-semibold text-gray-700 transition-all duration-300"
                 >
                   <option value="">Pilih Kolam</option>
                   {pools.map((pool) => (
@@ -362,243 +400,277 @@ const MicroController = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 -mt-4 relative z-10">
+          <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-2">
+            <nav className="flex space-x-2">
               <button
                 onClick={() => setActiveTab("sensor")}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`flex-1 py-4 px-6 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-3 ${
                   activeTab === "sensor"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "bg-gradient-to-r from-lime-400 to-green-500 text-white shadow-lg transform scale-105"
+                    : "text-gray-600 hover:bg-lime-50 hover:text-lime-700"
                 }`}
               >
-                <Database className="inline mr-2" size={16} />
+                <Database size={20} />
                 Push Data Sensor
               </button>
               <button
                 onClick={() => setActiveTab("relay")}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`flex-1 py-4 px-6 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-3 ${
                   activeTab === "relay"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "bg-gradient-to-r from-lime-400 to-green-500 text-white shadow-lg transform scale-105"
+                    : "text-gray-600 hover:bg-lime-50 hover:text-lime-700"
                 }`}
               >
-                <Zap className="inline mr-2" size={16} />
+                <Zap size={20} />
                 Get Relay Status
               </button>
             </nav>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
           {/* Sensor Data Tab */}
           {activeTab === "sensor" && (
-            <div className="space-y-6">
-              <div className="bg-white rounded-lg shadow-sm border p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Push Data Sensor ke Server</h3>
+            <div className="space-y-8 tab-content">
+              <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 card-hover animate-fadeInUp">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-gradient-to-r from-lime-400 to-green-500 p-4 rounded-xl">
+                      <Send size={28} className="text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-800">Push Data Sensor ke Server</h3>
+                      <p className="text-gray-600 mt-1">Kirim data sensor dari microcontroller ke database</p>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
                     <button
                       onClick={generateSampleData}
-                      className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm transition-colors"
+                      className="px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-xl text-sm transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
                     >
                       Generate Sample
                     </button>
                     <button
                       onClick={sendSensorData}
                       disabled={loading || !selectedPool}
-                      className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg flex items-center gap-2 transition-colors"
+                      className="px-8 py-3 bg-gradient-to-r from-lime-400 to-green-500 hover:from-lime-500 hover:to-green-600 disabled:from-gray-300 disabled:to-gray-400 text-white rounded-xl flex items-center gap-3 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
                     >
-                      <Send size={16} />
+                      <Send size={18} />
                       {loading ? "Mengirim..." : "Kirim Data"}
                     </button>
                   </div>
                 </div>
 
                 {/* Sensor Input Form */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Solar Panel */}
-                  <div className="space-y-3">
-                    <h4 className="font-medium text-gray-900 border-b pb-2">Panel Surya</h4>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* Solar Panel Section */}
+                  <div className="space-y-4 form-section p-6 rounded-xl border-2 border-lime-100 animate-fadeInUp delay-100">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="bg-gradient-to-r from-yellow-400 to-orange-500 p-3 rounded-lg">
+                        <Sun size={24} className="text-white" />
+                      </div>
+                      <h4 className="text-xl font-bold text-gray-800">Panel Surya</h4>
+                    </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">PV Voltage (V)</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">PV Voltage (V)</label>
                       <input
                         type="number"
                         step="0.1"
                         value={sensorData.pvVoltage}
                         onChange={(e) => handleSensorInputChange("pvVoltage", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
                         placeholder="12.5"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">PV Current (A)</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">PV Current (A)</label>
                       <input
                         type="number"
                         step="0.1"
                         value={sensorData.pvCurrent}
                         onChange={(e) => handleSensorInputChange("pvCurrent", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
                         placeholder="1.2"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">PV Power (W)</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">PV Power (W)</label>
                       <input
                         type="number"
                         step="0.1"
                         value={sensorData.pvPower}
                         onChange={(e) => handleSensorInputChange("pvPower", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
                         placeholder="15.0"
                       />
                     </div>
                   </div>
 
-                  {/* Battery */}
-                  <div className="space-y-3">
-                    <h4 className="font-medium text-gray-900 border-b pb-2">Baterai</h4>
+                  {/* Battery Section */}
+                  <div className="space-y-4 form-section p-6 rounded-xl border-2 border-lime-100 animate-fadeInUp delay-200">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="bg-gradient-to-r from-green-400 to-emerald-500 p-3 rounded-lg">
+                        <Battery size={24} className="text-white" />
+                      </div>
+                      <h4 className="text-xl font-bold text-gray-800">Baterai</h4>
+                    </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Battery Voltage (V)</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Battery Voltage (V)</label>
                       <input
                         type="number"
                         step="0.1"
                         value={sensorData.battVoltage}
                         onChange={(e) => handleSensorInputChange("battVoltage", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
                         placeholder="11.8"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Charge Current (A)</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Charge Current (A)</label>
                       <input
                         type="number"
                         step="0.1"
                         value={sensorData.battChCurrent}
                         onChange={(e) => handleSensorInputChange("battChCurrent", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
                         placeholder="1.0"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Discharge Current (A)</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Discharge Current (A)</label>
                       <input
                         type="number"
                         step="0.1"
                         value={sensorData.battDischCurrent}
                         onChange={(e) => handleSensorInputChange("battDischCurrent", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
                         placeholder="0.2"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Battery Temp (°C)</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Battery Temp (°C)</label>
                       <input
                         type="number"
                         step="0.1"
                         value={sensorData.battTemp}
                         onChange={(e) => handleSensorInputChange("battTemp", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
                         placeholder="30.0"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Battery Percentage (%)</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Battery Percentage (%)</label>
                       <input
                         type="number"
                         step="1"
                         value={sensorData.battPercentage}
                         onChange={(e) => handleSensorInputChange("battPercentage", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
                         placeholder="85"
                       />
                     </div>
                   </div>
 
-                  {/* Environment & Bioflok */}
-                  <div className="space-y-3">
-                    <h4 className="font-medium text-gray-900 border-b pb-2">Lingkungan & Bioflok</h4>
+                  {/* Environment & Bioflok Section */}
+                  <div className="space-y-4 form-section p-6 rounded-xl border-2 border-lime-100 animate-fadeInUp delay-300">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="bg-gradient-to-r from-blue-400 to-cyan-500 p-3 rounded-lg">
+                        <Droplets size={24} className="text-white" />
+                      </div>
+                      <h4 className="text-xl font-bold text-gray-800">Lingkungan & Bioflok</h4>
+                    </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Env Temperature (°C)</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Env Temperature (°C)</label>
                       <input
                         type="number"
                         step="0.1"
                         value={sensorData.envTemp}
                         onChange={(e) => handleSensorInputChange("envTemp", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
                         placeholder="29.0"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">pH Bioflok</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">pH Bioflok</label>
                       <input
                         type="number"
                         step="0.1"
                         value={sensorData.phBioflok}
                         onChange={(e) => handleSensorInputChange("phBioflok", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
                         placeholder="7.1"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Temp Bioflok (°C)</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Temp Bioflok (°C)</label>
                       <input
                         type="number"
                         step="0.1"
                         value={sensorData.tempBioflok}
                         onChange={(e) => handleSensorInputChange("tempBioflok", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
                         placeholder="28.5"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">DO Bioflok (mg/L)</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">DO Bioflok (mg/L)</label>
                       <input
                         type="number"
                         step="0.1"
                         value={sensorData.doBioflok}
                         onChange={(e) => handleSensorInputChange("doBioflok", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
                         placeholder="6.8"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Load Current (A)</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Load Current (A)</label>
                       <input
                         type="number"
                         step="0.1"
                         value={sensorData.loadCurrent}
                         onChange={(e) => handleSensorInputChange("loadCurrent", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
                         placeholder="0.5"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Timestamp */}
-                <div className="mt-6 pt-4 border-t">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Timestamp Section */}
+                <div className="mt-8 pt-6 border-t-2 border-lime-100">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Timestamp</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Timestamp</label>
                       <input
                         type="text"
                         value={sensorData.timestamp}
                         onChange={(e) => handleSensorInputChange("timestamp", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
                         placeholder="2025-07-11T12:00:00"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Kolam Terpilih</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Kolam Terpilih</label>
                       <input
                         type="text"
                         value={selectedPool}
                         readOnly
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 font-semibold text-gray-600"
                         placeholder="Pilih kolam"
                       />
                     </div>
@@ -610,55 +682,74 @@ const MicroController = () => {
 
           {/* Relay Status Tab */}
           {activeTab === "relay" && (
-            <div className="space-y-6">
-              <div className="bg-white rounded-lg shadow-sm border p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Get Relay Status dari MicroController</h3>
-            
+            <div className="space-y-8 tab-content">
+              <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 card-hover animate-fadeInUp">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-gradient-to-r from-lime-400 to-green-500 p-4 rounded-xl">
+                      <Zap size={28} className="text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-800">Get Relay Status dari MicroController</h3>
+                      <p className="text-gray-600 mt-1">Ambil status relay dari microcontroller</p>
+                    </div>
                   </div>
                   <button
                     onClick={getRelayStatus}
                     disabled={relayLoading || !selectedPool}
-                    className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg flex items-center gap-2 transition-colors"
+                    className="px-8 py-3 bg-gradient-to-r from-lime-400 to-green-500 hover:from-lime-500 hover:to-green-600 disabled:from-gray-300 disabled:to-gray-400 text-white rounded-xl flex items-center gap-3 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
                   >
-                    <Cpu size={16} />
+                    <Cpu size={18} />
                     {relayLoading ? "Mengambil..." : "Get Status"}
                   </button>
                 </div>
 
                 {/* Relay Status Display */}
                 {relayData ? (
-                  <div className="bg-gray-50 rounded-lg p-6">
-                    <h4 className="font-medium text-gray-900 mb-4">✅ Status Relay Ditemukan:</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div className="bg-white p-4 rounded-lg border">
-                        <div className="text-sm text-gray-600">Kode Relay</div>
-                        <div className="text-lg font-semibold">{relayData.code}</div>
+                  <div className="bg-gradient-to-r from-lime-50 to-green-50 rounded-2xl p-8 border-2 border-lime-200 animate-fadeInUp">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="bg-lime-400 p-3 rounded-xl">
+                        <CheckCircle size={24} className="text-white" />
                       </div>
-                      <div className="bg-white p-4 rounded-lg border">
-                        <div className="text-sm text-gray-600">Status</div>
-                        <div className={`text-lg font-semibold ${relayData.val ? "text-green-600" : "text-red-600"}`}>
-                          {relayData.val ? "🟢 ON" : "🔴 OFF"}
+                      <h4 className="text-xl font-bold text-gray-800">Status Relay Ditemukan</h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                      <div className="bg-white p-6 rounded-xl border-2 border-lime-100 shadow-lg card-hover">
+                        <div className="text-sm text-gray-600 font-semibold mb-2">Kode Relay</div>
+                        <div className="text-2xl font-bold text-gray-800">{relayData.code}</div>
+                      </div>
+
+                      <div className="bg-white p-6 rounded-xl border-2 border-lime-100 shadow-lg card-hover">
+                        <div className="text-sm text-gray-600 font-semibold mb-2">Status</div>
+                        <div
+                          className={`text-2xl font-bold flex items-center gap-2 ${
+                            relayData.val ? "text-green-600" : "text-red-600"
+                          }`}
+                        >
+                          <Power size={24} />
+                          {relayData.val ? "ON" : "OFF"}
                         </div>
                       </div>
-                      <div className="bg-white p-4 rounded-lg border">
-                        <div className="text-sm text-gray-600">User ID</div>
-                        <div className="text-lg font-semibold">{relayData.iduser}</div>
+
+                      <div className="bg-white p-6 rounded-xl border-2 border-lime-100 shadow-lg card-hover">
+                        <div className="text-sm text-gray-600 font-semibold mb-2">User ID</div>
+                        <div className="text-2xl font-bold text-gray-800">{relayData.iduser}</div>
                       </div>
-                      <div className="bg-white p-4 rounded-lg border">
-                        <div className="text-sm text-gray-600">Relay ID</div>
-                        <div className="text-lg font-semibold">{relayData.id}</div>
+
+                      <div className="bg-white p-6 rounded-xl border-2 border-lime-100 shadow-lg card-hover">
+                        <div className="text-sm text-gray-600 font-semibold mb-2">Relay ID</div>
+                        <div className="text-2xl font-bold text-gray-800">{relayData.id}</div>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-12">
-                    <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Cpu size={32} className="text-gray-400" />
+                  <div className="text-center py-16 animate-fadeInUp">
+                    <div className="w-32 h-32 bg-gradient-to-br from-lime-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
+                      <Cpu size={48} className="text-lime-500" />
                     </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Belum Ada Data Relay</h3>
-                    <p className="text-gray-600">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-4">Belum Ada Data Relay</h3>
+                    <p className="text-gray-600 text-lg">
                       {!selectedPool
                         ? "Pilih kolam dan klik 'Get Status' untuk mengambil data relay"
                         : `Klik 'Get Status' untuk mengambil data relay dari kolam ${selectedPool}`}
