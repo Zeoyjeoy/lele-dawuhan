@@ -1,7 +1,6 @@
 "use client"
-
 import { useState, useEffect } from "react"
-import { ArrowLeft, RefreshCw, TrendingUp, Battery, Zap, Activity, Database, Thermometer, Droplets } from "lucide-react"
+import { ArrowLeft, RefreshCw, TrendingUp, Battery, Zap, Activity, Thermometer, Droplets } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../Sidebar/Sidebar"
 
@@ -54,64 +53,12 @@ const Sensor = () => {
   const [userSession, setUserSession] = useState(null)
   const [sidebarVisible, setSidebarVisible] = useState(true)
   const [activeTab, setActiveTab] = useState("realtime")
-  const [useMockData, setUseMockData] = useState(false)
+
   const navigate = useNavigate()
 
   // API Base URLs
   const SENSOR_API_BASE = "http://43.165.198.49:8089/api/monitoring/sensors"
   const POOL_API_BASE = "http://43.165.198.49:8089/api/kolam"
-
-  // Enhanced Mock Data Generator with ALL fields
-  const generateMockSensorData = () => {
-    const now = new Date()
-    return {
-      id: Math.floor(Math.random() * 1000),
-      timestamp: now.toISOString(),
-      // Solar Panel
-      pvVoltage: (12 + Math.random() * 2).toFixed(1), // 12-14V
-      pvCurrent: (1 + Math.random() * 0.5).toFixed(1), // 1-1.5A
-      pvPower: (15 + Math.random() * 5).toFixed(1), // 15-20W
-      // Battery
-      battVoltage: (11.5 + Math.random() * 1).toFixed(1), // 11.5-12.5V
-      battChCurrent: (0.8 + Math.random() * 0.4).toFixed(1), // 0.8-1.2A
-      battChPower: (10 + Math.random() * 3).toFixed(1), // 10-13W
-      battDischCurrent: (0.1 + Math.random() * 0.3).toFixed(1), // 0.1-0.4A (NEW)
-      battTemp: (25 + Math.random() * 10).toFixed(1), // 25-35°C (NEW)
-      battPercentage: (70 + Math.random() * 25).toFixed(0), // 70-95%
-      // Load
-      loadCurrent: (0.3 + Math.random() * 0.4).toFixed(1), // 0.3-0.7A
-      loadPower: (4 + Math.random() * 3).toFixed(1), // 4-7W
-      // Environment
-      envTemp: (26 + Math.random() * 6).toFixed(1), // 26-32°C (NEW)
-      // Bioflok Parameters
-      phBioflok: (6.5 + Math.random() * 1.5).toFixed(1), // 6.5-8.0 pH (NEW)
-      tempBioflok: (27 + Math.random() * 4).toFixed(1), // 27-31°C (NEW)
-      doBioflok: (5 + Math.random() * 3).toFixed(1), // 5-8 mg/L (NEW)
-      // Meta
-      code: selectedPool,
-      iduser: userSession?.id || "8",
-    }
-  }
-
-  const generateMockHistoricalData = () => {
-    const data = []
-    const now = new Date()
-
-    for (let i = 23; i >= 0; i--) {
-      const timestamp = new Date(now.getTime() - i * 60 * 60 * 1000)
-      const baseData = generateMockSensorData()
-      data.push({
-        ...baseData,
-        timestamp: timestamp.toISOString(),
-        time: timestamp.toLocaleTimeString("id-ID", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        date: timestamp.toLocaleDateString("id-ID"),
-      })
-    }
-    return data
-  }
 
   // Get user session on component mount
   useEffect(() => {
@@ -159,15 +106,6 @@ const Sensor = () => {
     try {
       setRefreshing(true)
 
-      if (useMockData) {
-        console.log("Using mock data for latest sensor")
-        setTimeout(() => {
-          setLatestData(generateMockSensorData())
-          setRefreshing(false)
-        }, 500)
-        return
-      }
-
       const response = await fetch(`${SENSOR_API_BASE}/latest?code=${poolCode}&id=${userSession.id}`, {
         method: "GET",
         headers: {
@@ -184,13 +122,12 @@ const Sensor = () => {
       if (data.status === "200 OK" && data.payload && data.payload.length > 0) {
         setLatestData(data.payload[0])
       } else {
-        console.log("No real data found, switching to mock data")
-        setLatestData(generateMockSensorData())
+        console.log("No data found")
+        setLatestData(null)
       }
     } catch (error) {
       console.error("Error fetching latest sensor data:", error)
-      console.log("Using mock data due to error")
-      setLatestData(generateMockSensorData())
+      setLatestData(null)
     } finally {
       setRefreshing(false)
     }
@@ -202,15 +139,6 @@ const Sensor = () => {
 
     try {
       setLoading(true)
-
-      if (useMockData) {
-        console.log("Using mock data for historical sensor")
-        setTimeout(() => {
-          setHistoricalData(generateMockHistoricalData())
-          setLoading(false)
-        }, 500)
-        return
-      }
 
       const response = await fetch(`${SENSOR_API_BASE}?code=${poolCode}&id=${userSession.id}`, {
         method: "GET",
@@ -236,13 +164,12 @@ const Sensor = () => {
         }))
         setHistoricalData(processedData.reverse())
       } else {
-        console.log("No real historical data found, using mock data")
-        setHistoricalData(generateMockHistoricalData())
+        console.log("No historical data found")
+        setHistoricalData([])
       }
     } catch (error) {
       console.error("Error fetching historical sensor data:", error)
-      console.log("Using mock data due to error")
-      setHistoricalData(generateMockHistoricalData())
+      setHistoricalData([])
     } finally {
       setLoading(false)
     }
@@ -261,7 +188,7 @@ const Sensor = () => {
       fetchLatestSensorData(selectedPool)
       fetchHistoricalSensorData(selectedPool)
     }
-  }, [selectedPool, userSession, useMockData])
+  }, [selectedPool, userSession])
 
   // Auto refresh latest data every 30 seconds
   useEffect(() => {
@@ -269,10 +196,9 @@ const Sensor = () => {
       const interval = setInterval(() => {
         fetchLatestSensorData(selectedPool)
       }, 30000)
-
       return () => clearInterval(interval)
     }
-  }, [selectedPool, activeTab, userSession, useMockData])
+  }, [selectedPool, activeTab, userSession])
 
   const handlePoolChange = (poolCode) => {
     setSelectedPool(poolCode)
@@ -358,27 +284,6 @@ const Sensor = () => {
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                {/* Mock Data Toggle */}
-                <div className="flex items-center gap-2">
-                  <Database size={16} className="text-gray-600" />
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={useMockData}
-                      onChange={(e) => setUseMockData(e.target.checked)}
-                      className="sr-only"
-                    />
-                    <div
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${useMockData ? "bg-blue-600" : "bg-gray-300"}`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${useMockData ? "translate-x-6" : "translate-x-1"}`}
-                      />
-                    </div>
-                    <span className="ml-2 text-sm text-gray-600">Mock Data</span>
-                  </label>
-                </div>
-
                 <select
                   value={selectedPool}
                   onChange={(e) => handlePoolChange(e.target.value)}
@@ -403,22 +308,6 @@ const Sensor = () => {
             </div>
           </div>
         </div>
-
-        {/* Mock Data Notice */}
-        {useMockData && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex items-center gap-2">
-                <Database className="text-yellow-600" size={20} />
-                <span className="text-yellow-800 font-medium">Mode Testing</span>
-              </div>
-              <p className="text-yellow-700 text-sm mt-1">
-                Menggunakan data simulasi untuk testing. Matikan toggle "Mock Data" untuk menggunakan data real dari
-                hardware.
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* Tab Navigation */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
@@ -469,6 +358,9 @@ const Sensor = () => {
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak Ada Data</h3>
                   <p className="text-gray-600">Belum ada data sensor untuk kolam {selectedPool}</p>
+                  <p className="text-gray-500 text-sm mt-2">
+                    Gunakan MicroController untuk mengirim data sensor ke server
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -552,7 +444,7 @@ const Sensor = () => {
                     </div>
                   </div>
 
-                  {/* Environment Metrics - NEW */}
+                  {/* Environment Metrics */}
                   <div className="bg-white rounded-lg shadow-sm border p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-semibold text-gray-900">Lingkungan</h3>
@@ -572,7 +464,7 @@ const Sensor = () => {
                     </div>
                   </div>
 
-                  {/* Bioflok Water Quality - NEW */}
+                  {/* Bioflok Water Quality */}
                   <div className="bg-white rounded-lg shadow-sm border p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-semibold text-gray-900">Kualitas Air</h3>
@@ -600,7 +492,7 @@ const Sensor = () => {
                     </div>
                   </div>
 
-                  {/* System Status Summary - NEW */}
+                  {/* System Status Summary */}
                   <div className="bg-white rounded-lg shadow-sm border p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-semibold text-gray-900">Status Sistem</h3>
@@ -644,6 +536,9 @@ const Sensor = () => {
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak Ada Data Historis</h3>
                   <p className="text-gray-600">Belum ada data historis untuk kolam {selectedPool}</p>
+                  <p className="text-gray-500 text-sm mt-2">
+                    Gunakan MicroController untuk mengirim data sensor ke server
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-8">
@@ -675,7 +570,7 @@ const Sensor = () => {
                     </div>
                   </div>
 
-                  {/* Temperature Charts - NEW */}
+                  {/* Temperature Charts */}
                   <div className="bg-white rounded-lg shadow-sm border p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Grafik Suhu (Temperature)</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -703,7 +598,7 @@ const Sensor = () => {
                     </div>
                   </div>
 
-                  {/* Water Quality Charts - NEW */}
+                  {/* Water Quality Charts */}
                   <div className="bg-white rounded-lg shadow-sm border p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Kualitas Air Bioflok</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
