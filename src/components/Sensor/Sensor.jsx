@@ -4,19 +4,60 @@ import { ArrowLeft, RefreshCw, TrendingUp, Battery, Zap, Activity, Thermometer, 
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../Sidebar/Sidebar"
 
-// Simple Chart Component
+// Enhanced Chart Component with detailed data display
 const SimpleLineChart = ({ data, dataKey, color, title, unit = "" }) => {
+  const [hoveredPoint, setHoveredPoint] = useState(null)
+  const [showTable, setShowTable] = useState(false)
+
   if (!data || data.length === 0) return <div className="text-gray-500">No data available</div>
 
   const maxValue = Math.max(...data.map((item) => item[dataKey] || 0))
   const minValue = Math.min(...data.map((item) => item[dataKey] || 0))
   const range = maxValue - minValue || 1
+  const avgValue = data.reduce((sum, item) => sum + (item[dataKey] || 0), 0) / data.length
+
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const pointIndex = Math.round((x / rect.width) * (data.length - 1))
+    if (pointIndex >= 0 && pointIndex < data.length) {
+      setHoveredPoint({ index: pointIndex, data: data[pointIndex] })
+    }
+  }
+
+  const handleMouseLeave = () => {
+    setHoveredPoint(null)
+  }
 
   return (
     <div className="w-full">
-      <h4 className="text-sm font-medium text-gray-700 mb-2">{title}</h4>
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="text-sm font-medium text-gray-700">{title}</h4>
+        <button
+          onClick={() => setShowTable(!showTable)}
+          className="text-xs text-blue-600 hover:text-blue-800 underline"
+        >
+          {showTable ? "Hide Details" : "Show Details"}
+        </button>
+      </div>
+
       <div className="relative h-32 bg-gray-50 rounded border">
-        <svg className="w-full h-full" viewBox="0 0 400 120" preserveAspectRatio="none">
+        <svg
+          className="w-full h-full cursor-crosshair"
+          viewBox="0 0 400 120"
+          preserveAspectRatio="none"
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
+          {/* Grid lines */}
+          <defs>
+            <pattern id={`grid-${dataKey}`} width="40" height="24" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 24" fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="400" height="120" fill={`url(#grid-${dataKey})`} />
+
+          {/* Main line */}
           <polyline
             fill="none"
             stroke={color}
@@ -29,16 +70,218 @@ const SimpleLineChart = ({ data, dataKey, color, title, unit = "" }) => {
               })
               .join(" ")}
           />
+
+          {/* Data points */}
+          {data.map((item, index) => {
+            const x = (index / (data.length - 1)) * 400
+            const y = 120 - ((item[dataKey] - minValue) / range) * 100
+            return <circle key={index} cx={x} cy={y} r="2" fill={color} className="opacity-60 hover:opacity-100" />
+          })}
+
+          {/* Hover indicator */}
+          {hoveredPoint && (
+            <g>
+              <line
+                x1={(hoveredPoint.index / (data.length - 1)) * 400}
+                y1="0"
+                x2={(hoveredPoint.index / (data.length - 1)) * 400}
+                y2="120"
+                stroke="#374151"
+                strokeWidth="1"
+                strokeDasharray="2,2"
+              />
+              <circle
+                cx={(hoveredPoint.index / (data.length - 1)) * 400}
+                cy={120 - ((hoveredPoint.data[dataKey] - minValue) / range) * 100}
+                r="4"
+                fill={color}
+                stroke="white"
+                strokeWidth="2"
+              />
+            </g>
+          )}
         </svg>
-        <div className="absolute top-2 right-2 text-xs text-gray-600">
-          Max: {maxValue.toFixed(1)}
-          {unit}
+
+        {/* Stats display */}
+        <div className="absolute top-2 right-2 text-xs text-gray-600 bg-white bg-opacity-90 p-1 rounded">
+          <div>
+            Max: {maxValue.toFixed(1)}
+            {unit}
+          </div>
+          <div>
+            Avg: {avgValue.toFixed(1)}
+            {unit}
+          </div>
+          <div>
+            Min: {minValue.toFixed(1)}
+            {unit}
+          </div>
         </div>
-        <div className="absolute bottom-2 right-2 text-xs text-gray-600">
-          Min: {minValue.toFixed(1)}
-          {unit}
-        </div>
+
+        {/* Hover tooltip */}
+        {hoveredPoint && (
+          <div className="absolute bottom-2 left-2 text-xs bg-gray-800 text-white p-2 rounded shadow-lg">
+            <div className="font-medium">{hoveredPoint.data.time || "N/A"}</div>
+            <div>
+              {title}: {Number.parseFloat(hoveredPoint.data[dataKey] || 0).toFixed(2)}
+              {unit}
+            </div>
+            <div className="text-gray-300">{hoveredPoint.data.date || "N/A"}</div>
+          </div>
+        )}
       </div>
+
+      {/* Detailed data table */}
+      {showTable && (
+        <div className="mt-4 max-h-48 overflow-y-auto border rounded">
+          <table className="w-full text-xs">
+            <thead className="bg-gray-50 sticky top-0">
+              <tr>
+                <th className="px-2 py-1 text-left">Time</th>
+                <th className="px-2 py-1 text-left">Date</th>
+                <th className="px-2 py-1 text-right">{title}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((item, index) => (
+                <tr key={index} className="border-t hover:bg-gray-50">
+                  <td className="px-2 py-1">{item.time || "N/A"}</td>
+                  <td className="px-2 py-1">{item.date || "N/A"}</td>
+                  <td className="px-2 py-1 text-right font-mono">
+                    {Number.parseFloat(item[dataKey] || 0).toFixed(2)}
+                    {unit}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Comprehensive Data Table Component
+const ComprehensiveDataTable = ({ data }) => {
+  const [sortField, setSortField] = useState("timestamp")
+  const [sortDirection, setSortDirection] = useState("desc")
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
+  const sortedData = [...data].sort((a, b) => {
+    const aVal = a[sortField] || 0
+    const bVal = b[sortField] || 0
+    if (sortDirection === "asc") {
+      return aVal > bVal ? 1 : -1
+    }
+    return aVal < bVal ? 1 : -1
+  })
+
+  const paginatedData = sortedData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+
+  const totalPages = Math.ceil(sortedData.length / itemsPerPage)
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+    } else {
+      setSortField(field)
+      setSortDirection("desc")
+    }
+  }
+
+  const fields = [
+    { key: "timestamp", label: "Waktu", format: (val) => new Date(val).toLocaleString("id-ID") },
+    { key: "pvVoltage", label: "PV Voltage", unit: "V" },
+    { key: "pvCurrent", label: "PV Current", unit: "A" },
+    { key: "pvPower", label: "PV Power", unit: "W" },
+    { key: "battVoltage", label: "Batt Voltage", unit: "V" },
+    { key: "battChCurrent", label: "Batt Ch Current", unit: "A" },
+    { key: "battDischCurrent", label: "Batt Disch Current", unit: "A" },
+    { key: "battTemp", label: "Batt Temp", unit: "°C" },
+    { key: "battPercentage", label: "Batt %", unit: "%" },
+    { key: "loadCurrent", label: "Load Current", unit: "A" },
+    { key: "loadPower", label: "Load Power", unit: "W" },
+    { key: "envTemp", label: "Env Temp", unit: "°C" },
+    { key: "phBioflok", label: "pH", unit: "" },
+    { key: "tempBioflok", label: "Water Temp", unit: "°C" },
+    { key: "doBioflok", label: "DO", unit: "mg/L" },
+  ]
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm border p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">Data Detail Lengkap</h3>
+        <div className="text-sm text-gray-600">Total: {data.length} records</div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs border-collapse">
+          <thead>
+            <tr className="bg-gray-50">
+              {fields.map((field) => (
+                <th
+                  key={field.key}
+                  className="px-2 py-2 text-left border cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleSort(field.key)}
+                >
+                  <div className="flex items-center gap-1">
+                    {field.label}
+                    {field.unit && <span className="text-gray-400">({field.unit})</span>}
+                    {sortField === field.key && (
+                      <span className="text-blue-600">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                    )}
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedData.map((item, index) => (
+              <tr key={index} className="hover:bg-gray-50">
+                {fields.map((field) => (
+                  <td key={field.key} className="px-2 py-2 border font-mono text-right">
+                    {field.format
+                      ? field.format(item[field.key])
+                      : item[field.key]
+                        ? Number.parseFloat(item[field.key]).toFixed(2)
+                        : "N/A"}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <div className="text-sm text-gray-600">
+            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, data.length)} of{" "}
+            {data.length} entries
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              Previous
+            </button>
+            <span className="px-3 py-1 text-sm">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -53,6 +296,7 @@ const Sensor = () => {
   const [userSession, setUserSession] = useState(null)
   const [sidebarVisible, setSidebarVisible] = useState(true)
   const [activeTab, setActiveTab] = useState("realtime")
+  const [showAllDetails, setShowAllDetails] = useState(false)
 
   const navigate = useNavigate()
 
@@ -542,152 +786,169 @@ const Sensor = () => {
                 </div>
               ) : (
                 <div className="space-y-8">
-                  {/* Power Chart */}
-                  <div className="bg-white rounded-lg shadow-sm border p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Grafik Daya (Power)</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <SimpleLineChart
-                        data={historicalData}
-                        dataKey="pvPower"
-                        color="#f59e0b"
-                        title="Panel Surya"
-                        unit="W"
-                      />
-                      <SimpleLineChart
-                        data={historicalData}
-                        dataKey="battChPower"
-                        color="#3b82f6"
-                        title="Charge Baterai"
-                        unit="W"
-                      />
-                      <SimpleLineChart
-                        data={historicalData}
-                        dataKey="loadPower"
-                        color="#8b5cf6"
-                        title="Beban"
-                        unit="W"
-                      />
-                    </div>
+                  {/* View Toggle */}
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold text-gray-900">Data Historis - {selectedPool}</h2>
+                    <button
+                      onClick={() => setShowAllDetails(!showAllDetails)}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
+                    >
+                      {showAllDetails ? "Show Charts" : "Show All Details"}
+                    </button>
                   </div>
 
-                  {/* Temperature Charts */}
-                  <div className="bg-white rounded-lg shadow-sm border p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Grafik Suhu (Temperature)</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <SimpleLineChart
-                        data={historicalData}
-                        dataKey="envTemp"
-                        color="#f97316"
-                        title="Suhu Lingkungan"
-                        unit="°C"
-                      />
-                      <SimpleLineChart
-                        data={historicalData}
-                        dataKey="tempBioflok"
-                        color="#06b6d4"
-                        title="Suhu Air Bioflok"
-                        unit="°C"
-                      />
-                      <SimpleLineChart
-                        data={historicalData}
-                        dataKey="battTemp"
-                        color="#8b5cf6"
-                        title="Suhu Baterai"
-                        unit="°C"
-                      />
-                    </div>
-                  </div>
+                  {showAllDetails ? (
+                    <ComprehensiveDataTable data={historicalData} />
+                  ) : (
+                    <>
+                      {/* Power Chart */}
+                      <div className="bg-white rounded-lg shadow-sm border p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Grafik Daya (Power)</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <SimpleLineChart
+                            data={historicalData}
+                            dataKey="pvPower"
+                            color="#f59e0b"
+                            title="Panel Surya"
+                            unit="W"
+                          />
+                          <SimpleLineChart
+                            data={historicalData}
+                            dataKey="battChPower"
+                            color="#3b82f6"
+                            title="Charge Baterai"
+                            unit="W"
+                          />
+                          <SimpleLineChart
+                            data={historicalData}
+                            dataKey="loadPower"
+                            color="#8b5cf6"
+                            title="Beban"
+                            unit="W"
+                          />
+                        </div>
+                      </div>
 
-                  {/* Water Quality Charts */}
-                  <div className="bg-white rounded-lg shadow-sm border p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Kualitas Air Bioflok</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <SimpleLineChart
-                        data={historicalData}
-                        dataKey="phBioflok"
-                        color="#10b981"
-                        title="pH Bioflok"
-                        unit=""
-                      />
-                      <SimpleLineChart
-                        data={historicalData}
-                        dataKey="doBioflok"
-                        color="#3b82f6"
-                        title="Dissolved Oxygen"
-                        unit=" mg/L"
-                      />
-                    </div>
-                  </div>
+                      {/* Temperature Charts */}
+                      <div className="bg-white rounded-lg shadow-sm border p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Grafik Suhu (Temperature)</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <SimpleLineChart
+                            data={historicalData}
+                            dataKey="envTemp"
+                            color="#f97316"
+                            title="Suhu Lingkungan"
+                            unit="°C"
+                          />
+                          <SimpleLineChart
+                            data={historicalData}
+                            dataKey="tempBioflok"
+                            color="#06b6d4"
+                            title="Suhu Air Bioflok"
+                            unit="°C"
+                          />
+                          <SimpleLineChart
+                            data={historicalData}
+                            dataKey="battTemp"
+                            color="#8b5cf6"
+                            title="Suhu Baterai"
+                            unit="°C"
+                          />
+                        </div>
+                      </div>
 
-                  {/* Battery Enhanced Charts */}
-                  <div className="bg-white rounded-lg shadow-sm border p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Monitoring Baterai Lengkap</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <SimpleLineChart
-                        data={historicalData}
-                        dataKey="battPercentage"
-                        color="#10b981"
-                        title="Persentase Baterai"
-                        unit="%"
-                      />
-                      <SimpleLineChart
-                        data={historicalData}
-                        dataKey="battDischCurrent"
-                        color="#ef4444"
-                        title="Arus Discharge"
-                        unit="A"
-                      />
-                    </div>
-                  </div>
+                      {/* Water Quality Charts */}
+                      <div className="bg-white rounded-lg shadow-sm border p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Kualitas Air Bioflok</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <SimpleLineChart
+                            data={historicalData}
+                            dataKey="phBioflok"
+                            color="#10b981"
+                            title="pH Bioflok"
+                            unit=""
+                          />
+                          <SimpleLineChart
+                            data={historicalData}
+                            dataKey="doBioflok"
+                            color="#3b82f6"
+                            title="Dissolved Oxygen"
+                            unit=" mg/L"
+                          />
+                        </div>
+                      </div>
 
-                  {/* Voltage Chart */}
-                  <div className="bg-white rounded-lg shadow-sm border p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Grafik Tegangan (Voltage)</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <SimpleLineChart
-                        data={historicalData}
-                        dataKey="pvVoltage"
-                        color="#f59e0b"
-                        title="Panel Surya"
-                        unit="V"
-                      />
-                      <SimpleLineChart
-                        data={historicalData}
-                        dataKey="battVoltage"
-                        color="#3b82f6"
-                        title="Baterai"
-                        unit="V"
-                      />
-                    </div>
-                  </div>
+                      {/* Battery Enhanced Charts */}
+                      <div className="bg-white rounded-lg shadow-sm border p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Monitoring Baterai Lengkap</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <SimpleLineChart
+                            data={historicalData}
+                            dataKey="battPercentage"
+                            color="#10b981"
+                            title="Persentase Baterai"
+                            unit="%"
+                          />
+                          <SimpleLineChart
+                            data={historicalData}
+                            dataKey="battDischCurrent"
+                            color="#ef4444"
+                            title="Arus Discharge"
+                            unit="A"
+                          />
+                        </div>
+                      </div>
 
-                  {/* Current Chart */}
-                  <div className="bg-white rounded-lg shadow-sm border p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Grafik Arus (Current)</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <SimpleLineChart
-                        data={historicalData}
-                        dataKey="pvCurrent"
-                        color="#f59e0b"
-                        title="Panel Surya"
-                        unit="A"
-                      />
-                      <SimpleLineChart
-                        data={historicalData}
-                        dataKey="battChCurrent"
-                        color="#3b82f6"
-                        title="Charge Baterai"
-                        unit="A"
-                      />
-                      <SimpleLineChart
-                        data={historicalData}
-                        dataKey="loadCurrent"
-                        color="#8b5cf6"
-                        title="Beban"
-                        unit="A"
-                      />
-                    </div>
-                  </div>
+                      {/* Voltage Chart */}
+                      <div className="bg-white rounded-lg shadow-sm border p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Grafik Tegangan (Voltage)</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <SimpleLineChart
+                            data={historicalData}
+                            dataKey="pvVoltage"
+                            color="#f59e0b"
+                            title="Panel Surya"
+                            unit="V"
+                          />
+                          <SimpleLineChart
+                            data={historicalData}
+                            dataKey="battVoltage"
+                            color="#3b82f6"
+                            title="Baterai"
+                            unit="V"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Current Chart */}
+                      <div className="bg-white rounded-lg shadow-sm border p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Grafik Arus (Current)</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <SimpleLineChart
+                            data={historicalData}
+                            dataKey="pvCurrent"
+                            color="#f59e0b"
+                            title="Panel Surya"
+                            unit="A"
+                          />
+                          <SimpleLineChart
+                            data={historicalData}
+                            dataKey="battChCurrent"
+                            color="#3b82f6"
+                            title="Charge Baterai"
+                            unit="A"
+                          />
+                          <SimpleLineChart
+                            data={historicalData}
+                            dataKey="loadCurrent"
+                            color="#8b5cf6"
+                            title="Beban"
+                            unit="A"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>
