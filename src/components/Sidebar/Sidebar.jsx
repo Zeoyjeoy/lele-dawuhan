@@ -2,11 +2,12 @@
 
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { Home, Cpu, Zap, Activity, Search, Menu, X } from "lucide-react"
+import { Home, Cpu, Zap, Activity, Search, Menu, X, XCircle } from "lucide-react"
 
 const Sidebar = () => {
   const [searchQuery, setSearchQuery] = useState("")
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isSearchFocused, setIsSearchFocused] = useState(false)
   const location = useLocation()
 
   const menuItems = [
@@ -37,10 +38,22 @@ const Sidebar = () => {
   ]
 
   // Filter menu items based on search query
-  const filteredMenuItems = menuItems.filter((item) => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredMenuItems = menuItems.filter(
+    (item) =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchQuery.toLowerCase()),
+  )
 
   const isActiveLink = (link) => {
     return location.pathname === link
+  }
+
+  const clearSearch = () => {
+    setSearchQuery("")
+  }
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value)
   }
 
   return (
@@ -85,27 +98,57 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* Search Bar */}
+      {/* Enhanced Search Bar - FIXED */}
       {!isCollapsed && (
         <div className="relative z-10 px-6 mb-6 animate-slideDown">
-          <div className="relative group">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-              <Search className="w-5 h-5 text-green-200 group-focus-within:text-white transition-colors duration-300" />
+          <div className="relative">
+            {/* Search Icon */}
+            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none z-10">
+              <Search
+                className={`w-5 h-5 transition-colors duration-300 ${
+                  isSearchFocused || searchQuery ? "text-white" : "text-green-200"
+                }`}
+              />
             </div>
+
+            {/* Search Input - FIXED */}
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchChange}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
               className="
-                w-full py-3 pl-12 pr-4 text-white placeholder-green-200
-                bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl
-                focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50
-                transition-all duration-300 hover:bg-white/25
-              "
-              placeholder="Cari menu..."
+          w-full py-3 pl-12 pr-12 text-white placeholder-green-200
+          bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl
+          focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50
+          transition-all duration-300 hover:bg-white/25
+          relative z-20 cursor-text
+        "
+              placeholder="Cari menu atau fitur..."
+              autoComplete="off"
             />
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+            {/* Clear Search Button */}
+            {searchQuery && (
+              <button
+                onClick={clearSearch}
+                className="absolute inset-y-0 right-0 flex items-center pr-4 z-30 cursor-pointer"
+                type="button"
+              >
+                <XCircle className="w-5 h-5 text-green-200 hover:text-white transition-colors duration-200" />
+              </button>
+            )}
           </div>
+
+          {/* Search Results Counter */}
+          {searchQuery && (
+            <div className="mt-2 text-center">
+              <span className="text-green-100 text-xs">
+                {filteredMenuItems.length > 0 ? `${filteredMenuItems.length} hasil ditemukan` : "Tidak ada hasil"}
+              </span>
+            </div>
+          )}
         </div>
       )}
 
@@ -148,11 +191,37 @@ const Sidebar = () => {
                   {!isCollapsed && (
                     <div className="ml-4 flex-1">
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-sm">{item.name}</span>
+                        <span className="font-semibold text-sm">
+                          {/* Highlight search term */}
+                          {searchQuery ? (
+                            <span
+                              dangerouslySetInnerHTML={{
+                                __html: item.name.replace(
+                                  new RegExp(`(${searchQuery})`, "gi"),
+                                  '<mark class="bg-yellow-300 text-green-800 px-1 rounded">$1</mark>',
+                                ),
+                              }}
+                            />
+                          ) : (
+                            item.name
+                          )}
+                        </span>
                         {isActive && <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>}
                       </div>
                       <p className={`text-xs mt-1 ${isActive ? "text-green-500" : "text-green-100"}`}>
-                        {item.description}
+                        {/* Highlight search term in description */}
+                        {searchQuery ? (
+                          <span
+                            dangerouslySetInnerHTML={{
+                              __html: item.description.replace(
+                                new RegExp(`(${searchQuery})`, "gi"),
+                                '<mark class="bg-yellow-300 text-green-800 px-1 rounded">$1</mark>',
+                              ),
+                            }}
+                          />
+                        ) : (
+                          item.description
+                        )}
                       </p>
                     </div>
                   )}
@@ -166,7 +235,17 @@ const Sidebar = () => {
               <div className="text-center py-8 animate-fadeIn">
                 <Search className="w-12 h-12 text-green-200 mx-auto mb-3 opacity-50" />
                 <p className="text-green-100 text-sm">Tidak ada hasil ditemukan</p>
-                <p className="text-green-200 text-xs mt-1">Coba kata kunci lain</p>
+                <p className="text-green-200 text-xs mt-1">
+                  {searchQuery ? `untuk "${searchQuery}"` : "Coba kata kunci lain"}
+                </p>
+                {searchQuery && (
+                  <button
+                    onClick={clearSearch}
+                    className="mt-3 px-4 py-2 bg-white/20 hover:bg-white/30 text-white text-xs rounded-lg transition-colors duration-300"
+                  >
+                    Hapus pencarian
+                  </button>
+                )}
               </div>
             )}
       </nav>
