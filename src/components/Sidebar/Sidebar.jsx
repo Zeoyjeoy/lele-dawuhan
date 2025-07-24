@@ -259,7 +259,7 @@ const Sidebar = () => {
             </div>
             <div>
               <p className="text-white text-sm font-medium">Status: Online</p>
-              <p className="text-green-100 text-xs">Sistem berjalan normal</p>
+              <p className="text-green-100 text-xs">User <span className="font-medium">{userSession.username}</span> </p>
             </div>
           </div>
         </div>

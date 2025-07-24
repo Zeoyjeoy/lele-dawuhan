@@ -399,7 +399,6 @@ const MicroController = () => {
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">Push Data Sensor ke Server</h3>
-                    <p className="text-sm text-gray-600 mt-1">Endpoint: {MICRO_SENSOR_API}</p>
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -616,7 +615,7 @@ const MicroController = () => {
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">Get Relay Status dari MicroController</h3>
-                    <p className="text-sm text-gray-600 mt-1">Endpoint: {MICRO_RELAY_API}</p>
+            
                   </div>
                   <button
                     onClick={getRelayStatus}
