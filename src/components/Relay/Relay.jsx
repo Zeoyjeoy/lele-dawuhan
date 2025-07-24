@@ -1,9 +1,23 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Trash2, Power, PowerOff, Edit3, AlertCircle, CheckCircle, ArrowLeft } from "lucide-react"
+import {
+  Plus,
+  Trash2,
+  Power,
+  PowerOff,
+  Edit3,
+  AlertCircle,
+  CheckCircle,
+  ArrowLeft,
+  Zap,
+  Activity,
+  Settings,
+  TrendingUp,
+} from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../Sidebar/Sidebar"
+import "./Relay.css"
 
 const Relay = () => {
   const [relays, setRelays] = useState([])
@@ -70,10 +84,10 @@ const Relay = () => {
     }
   }, [navigate])
 
-  // Show notification
+  // Enhanced notification with animations
   const showNotification = (message, type = "success") => {
     setNotification({ message, type })
-    setTimeout(() => setNotification(null), 3000)
+    setTimeout(() => setNotification(null), 4000)
   }
 
   // Fetch available pools for dropdown
@@ -201,6 +215,7 @@ const Relay = () => {
 
     try {
       setApiLoading(true)
+
       const requestData = {
         val: newRelayVal,
         code: newRelayCode.trim(),
@@ -238,6 +253,7 @@ const Relay = () => {
         }
 
         console.log("New relay object:", newRelay)
+
         const updatedRelays = [...relays, newRelay]
         setRelays(updatedRelays)
 
@@ -312,6 +328,7 @@ const Relay = () => {
   const handleBulkRelayChange = async (activate) => {
     try {
       setApiLoading(true)
+
       const updatePromises = selectedRelays.map(async (relayId) => {
         const relay = relays.find((r) => r.id === relayId)
         if (!relay) return { relayId, success: false, error: "Relay tidak ditemukan" }
@@ -331,7 +348,9 @@ const Relay = () => {
 
       if (successCount > 0) {
         showNotification(
-          `${successCount} relay berhasil ${activate ? "diaktifkan" : "dinonaktifkan"}${failureCount > 0 ? `, ${failureCount} gagal` : ""}`,
+          `${successCount} relay berhasil ${activate ? "diaktifkan" : "dinonaktifkan"}${
+            failureCount > 0 ? `, ${failureCount} gagal` : ""
+          }`,
         )
       } else {
         showNotification("Semua relay gagal diubah. Periksa kembali kode relay.", "error")
@@ -359,7 +378,9 @@ const Relay = () => {
   }
 
   const getStatusColor = (val) => {
-    return val ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+    return val
+      ? "bg-gradient-to-r from-lime-100 to-green-100 text-green-800 border border-green-200"
+      : "bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border border-red-200"
   }
 
   const getStatusText = (val) => {
@@ -371,73 +392,101 @@ const Relay = () => {
     return pools.filter((pool) => !relays.some((relay) => relay.code === pool.code))
   }
 
+  // Calculate stats
+  const activeRelaysCount = relays.filter((relay) => relay.val).length
+  const inactiveRelaysCount = relays.length - activeRelaysCount
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat data relay...</p>
+      <div className="min-h-screen bg-gradient-to-br from-lime-50 via-green-50 to-emerald-50 flex items-center justify-center">
+        <div className="text-center animate-fadeInUp">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-lime-200 border-t-lime-500 mx-auto mb-6"></div>
+            <div className="absolute inset-0 rounded-full h-16 w-16 border-4 border-transparent border-t-green-400 animate-pulse mx-auto"></div>
+          </div>
+          <p className="text-gray-700 font-medium text-lg">Memuat data relay...</p>
+          <p className="text-gray-500 text-sm mt-2">Mohon tunggu sebentar</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-lime-50 via-green-50 to-emerald-50 flex">
       {/* Sidebar */}
       {sidebarVisible && <Sidebar />}
 
       {/* Main Content */}
-      <div className="flex-grow p-6">
-        {/* Notification */}
+      <div className="flex-grow">
+        {/* Enhanced Notification */}
         {notification && (
           <div
-            className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+            className={`fixed top-6 right-6 z-50 p-4 rounded-xl shadow-2xl border-l-4 animate-slideInFromRight max-w-md ${
               notification.type === "success"
-                ? "bg-green-100 border border-green-400 text-green-700"
-                : "bg-red-100 border border-red-400 text-red-700"
+                ? "bg-gradient-to-r from-lime-50 to-green-50 border-lime-400 text-green-800"
+                : "bg-gradient-to-r from-red-50 to-pink-50 border-red-400 text-red-800"
             }`}
           >
-            <div className="flex items-center gap-2">
-              {notification.type === "success" ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
-              <span>{notification.message}</span>
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-full ${notification.type === "success" ? "bg-lime-100" : "bg-red-100"}`}>
+                {notification.type === "success" ? (
+                  <CheckCircle size={20} className="text-green-600" />
+                ) : (
+                  <AlertCircle size={20} className="text-red-600" />
+                )}
+              </div>
+              <div>
+                <p className="font-semibold text-sm">{notification.message}</p>
+                <p className="text-xs opacity-75 mt-1">
+                  {notification.type === "success" ? "Berhasil!" : "Terjadi kesalahan"}
+                </p>
+              </div>
             </div>
           </div>
         )}
 
         {/* Loading Overlay */}
         {apiLoading && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
-            <div className="bg-white p-6 rounded-lg shadow-lg">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Memproses...</p>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 backdrop-blur-sm">
+            <div className="bg-white p-8 rounded-2xl shadow-2xl border border-lime-200 animate-fadeInUp">
+              <div className="flex items-center space-x-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-4 border-lime-200 border-t-lime-500"></div>
+                <div>
+                  <p className="text-gray-800 font-semibold">Memproses...</p>
+                  <p className="text-gray-500 text-sm">Mohon tunggu sebentar</p>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
         {/* Header */}
-        <div className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-6">
-              <div className="flex items-center gap-4">
+        <div className="bg-gradient-to-r from-lime-400 via-green-400 to-emerald-400 shadow-xl">
+          <div className="max-w-7xl mx-auto px-6 lg:px-8">
+            <div className="flex justify-between items-center py-8">
+              <div className="flex items-center gap-6 animate-slideInFromLeft">
                 <button
                   onClick={() => navigate("/homepage")}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-3 hover:bg-white/20 rounded-xl transition-all duration-300 transform hover:scale-110"
                 >
-                  <ArrowLeft size={20} className="text-gray-600" />
+                  <ArrowLeft size={24} className="text-white" />
                 </button>
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Manajemen Relay</h1>
-                  <p className="text-gray-600 mt-1">Kelola relay untuk kolam budidaya Anda</p>
+                  <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg flex items-center gap-3">
+                    <Zap size={36} />
+                    Manajemen Relay
+                  </h1>
+                  <p className="text-lime-100 text-lg">Kelola relay untuk kolam budidaya Anda</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
+
+              <div className="flex items-center gap-4 animate-slideInFromRight">
                 <button
                   onClick={() => setShowAddForm(!showAddForm)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                  className="bg-white hover:bg-lime-50 text-green-700 px-6 py-3 rounded-xl flex items-center gap-3 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple font-semibold"
                   disabled={getAvailablePools().length === 0}
                 >
-                  <Plus size={20} />
+                  <Plus size={22} />
                   Tambah Relay
                 </button>
                 <button
@@ -447,7 +496,7 @@ const Relay = () => {
                     window.userSession = null
                     navigate("/")
                   }}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
+                  className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple font-semibold"
                 >
                   Logout
                 </button>
@@ -456,84 +505,150 @@ const Relay = () => {
           </div>
         </div>
 
+        {/* Stats Cards */}
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 -mt-6 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="bg-gradient-to-br from-lime-400 to-green-500 rounded-2xl p-6 text-white shadow-xl animate-fadeInUp delay-100 card-hover">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-lime-100 text-sm font-medium">Total Relay</p>
+                  <p className="text-3xl font-bold">{relays.length}</p>
+                </div>
+                <div className="bg-white/20 p-3 rounded-xl">
+                  <Zap size={24} />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl p-6 text-white shadow-xl animate-fadeInUp delay-200 card-hover">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-green-100 text-sm font-medium">Relay Aktif</p>
+                  <p className="text-3xl font-bold">{activeRelaysCount}</p>
+                </div>
+                <div className="bg-white/20 p-3 rounded-xl">
+                  <Activity size={24} />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl p-6 text-white shadow-xl animate-fadeInUp delay-300 card-hover">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-emerald-100 text-sm font-medium">Tidak Aktif</p>
+                  <p className="text-3xl font-bold">{inactiveRelaysCount}</p>
+                </div>
+                <div className="bg-white/20 p-3 rounded-xl">
+                  <PowerOff size={24} />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-teal-400 to-cyan-500 rounded-2xl p-6 text-white shadow-xl animate-fadeInUp delay-400 card-hover">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-teal-100 text-sm font-medium">Efisiensi</p>
+                  <p className="text-3xl font-bold">
+                    {relays.length > 0 ? Math.round((activeRelaysCount / relays.length) * 100) : 0}%
+                  </p>
+                </div>
+                <div className="bg-white/20 p-3 rounded-xl">
+                  <TrendingUp size={24} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Add Relay Form */}
         {showAddForm && (
-          <div className="bg-white border-b shadow-sm">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-              <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold mb-4">Tambah Relay Baru</h3>
-
-                {getAvailablePools().length === 0 ? (
-                  <div className="text-center py-4">
-                    <p className="text-gray-600">
-                      Semua kolam sudah memiliki relay. Tidak ada kolam yang tersedia untuk ditambahkan relay baru.
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Kode Kolam *</label>
-                        <select
-                          value={newRelayCode}
-                          onChange={(e) => setNewRelayCode(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          required
-                        >
-                          <option value="">Pilih Kode Kolam</option>
-                          {getAvailablePools().map((pool) => (
-                            <option key={pool.id} value={pool.code}>
-                              {pool.code} - {pool.name || `Kolam ${pool.code}`}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Status Awal</label>
-                        <select
-                          value={newRelayVal}
-                          onChange={(e) => setNewRelayVal(e.target.value === "true")}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value={true}>ON (Aktif)</option>
-                          <option value={false}>OFF (Tidak Aktif)</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 mt-4">
-                      <button
-                        onClick={handleAddRelay}
-                        disabled={apiLoading}
-                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md transition-colors"
-                      >
-                        {apiLoading ? "Menyimpan..." : "Simpan"}
-                      </button>
-                      <button
-                        onClick={() => setShowAddForm(false)}
-                        className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-md transition-colors"
-                      >
-                        Batal
-                      </button>
-                    </div>
-                  </>
-                )}
+          <div className="max-w-7xl mx-auto px-6 lg:px-8 mb-8">
+            <div className="bg-gradient-to-r from-lime-50 to-green-50 border-2 border-lime-200 rounded-2xl p-8 shadow-xl animate-fadeInUp form-slide-down">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-lime-400 p-3 rounded-xl">
+                  <Plus size={24} className="text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800">Tambah Relay Baru</h3>
               </div>
+
+              {getAvailablePools().length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="w-24 h-24 bg-gradient-to-br from-lime-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Settings size={32} className="text-lime-500" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-gray-800 mb-2">Semua Kolam Sudah Memiliki Relay</h4>
+                  <p className="text-gray-600">Tidak ada kolam yang tersedia untuk ditambahkan relay baru.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-3">Kode Kolam *</label>
+                      <select
+                        value={newRelayCode}
+                        onChange={(e) => setNewRelayCode(e.target.value)}
+                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 bg-white"
+                        required
+                      >
+                        <option value="">Pilih Kode Kolam</option>
+                        {getAvailablePools().map((pool) => (
+                          <option key={pool.id} value={pool.code}>
+                            {pool.code} - {pool.name || `Kolam ${pool.code}`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-3">Status Awal</label>
+                      <select
+                        value={newRelayVal}
+                        onChange={(e) => setNewRelayVal(e.target.value === "true")}
+                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 bg-white"
+                      >
+                        <option value={true}>ON (Aktif)</option>
+                        <option value={false}>OFF (Tidak Aktif)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4 mt-8">
+                    <button
+                      onClick={handleAddRelay}
+                      disabled={apiLoading}
+                      className="bg-gradient-to-r from-lime-400 to-green-500 hover:from-lime-500 hover:to-green-600 disabled:from-gray-300 disabled:to-gray-400 text-white px-8 py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
+                    >
+                      {apiLoading ? "Menyimpan..." : "Simpan Relay"}
+                    </button>
+                    <button
+                      onClick={() => setShowAddForm(false)}
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-8 py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
+                    >
+                      Batal
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
 
         {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 pb-8">
           {/* Bulk Actions */}
           {selectedRelays.length > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="bg-gradient-to-r from-lime-100 to-green-100 border-2 border-lime-300 rounded-2xl p-6 mb-8 shadow-lg animate-fadeInUp bulk-actions">
               <div className="flex items-center justify-between">
-                <span className="text-blue-700 font-medium">{selectedRelays.length} relay dipilih</span>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-3">
+                  <div className="bg-lime-400 p-2 rounded-lg">
+                    <Zap size={20} className="text-white" />
+                  </div>
+                  <span className="text-green-800 font-bold text-lg">{selectedRelays.length} relay dipilih</span>
+                </div>
+                <div className="flex gap-3">
                   <button
                     onClick={() => handleBulkRelayChange(true)}
                     disabled={apiLoading}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-3 py-1 rounded-md text-sm flex items-center gap-1 transition-colors"
+                    className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-300 disabled:to-gray-400 text-white px-4 py-2 rounded-xl text-sm flex items-center gap-2 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
                   >
                     <Power size={16} />
                     Aktifkan
@@ -541,14 +656,14 @@ const Relay = () => {
                   <button
                     onClick={() => handleBulkRelayChange(false)}
                     disabled={apiLoading}
-                    className="bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white px-3 py-1 rounded-md text-sm flex items-center gap-1 transition-colors"
+                    className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:from-gray-300 disabled:to-gray-400 text-white px-4 py-2 rounded-xl text-sm flex items-center gap-2 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
                   >
                     <PowerOff size={16} />
                     Nonaktifkan
                   </button>
                   <button
                     onClick={handleDeleteSelected}
-                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm flex items-center gap-1 transition-colors"
+                    className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-4 py-2 rounded-xl text-sm flex items-center gap-2 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
                   >
                     <Trash2 size={16} />
                     Hapus
@@ -560,12 +675,12 @@ const Relay = () => {
 
           {/* Relay Cards */}
           {relays.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Plus size={32} className="text-gray-400" />
+            <div className="text-center py-16 animate-fadeInUp">
+              <div className="w-32 h-32 bg-gradient-to-br from-lime-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
+                <Zap size={48} className="text-lime-500" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Belum ada relay</h3>
-              <p className="text-gray-600 mb-4">
+              <h3 className="text-2xl font-bold text-gray-800 mb-4">Belum ada relay</h3>
+              <p className="text-gray-600 mb-8 text-lg">
                 {pools.length === 0
                   ? "Anda perlu membuat kolam terlebih dahulu sebelum menambahkan relay"
                   : "Mulai dengan menambahkan relay pertama Anda"}
@@ -573,79 +688,90 @@ const Relay = () => {
               {pools.length > 0 && (
                 <button
                   onClick={() => setShowAddForm(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+                  className="bg-gradient-to-r from-lime-400 to-green-500 hover:from-lime-500 hover:to-green-600 text-white px-8 py-4 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
                 >
-                  Tambah Relay
+                  Tambah Relay Pertama
                 </button>
               )}
             </div>
           ) : (
             <>
               {/* Select All Checkbox */}
-              <div className="bg-white rounded-lg shadow-sm border mb-4 p-4">
-                <label className="flex items-center cursor-pointer">
+              <div className="bg-white rounded-2xl shadow-lg border-2 border-lime-100 mb-6 p-6 animate-fadeInUp">
+                <label className="flex items-center cursor-pointer group">
                   <input
                     type="checkbox"
                     checked={selectedRelays.length === relays.length}
                     onChange={handleSelectAll}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-5 w-5 text-lime-500 focus:ring-lime-400 border-2 border-lime-300 rounded transition-all duration-300"
                   />
-                  <span className="ml-2 text-sm font-medium text-gray-700">Pilih Semua Relay ({relays.length})</span>
+                  <span className="ml-4 text-lg font-semibold text-gray-700 group-hover:text-lime-600 transition-colors">
+                    Pilih Semua Relay ({relays.length})
+                  </span>
                 </label>
               </div>
 
               {/* Relay Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {relays.map((relay) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {relays.map((relay, index) => (
                   <div
                     key={relay.id}
-                    className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow"
+                    className="bg-white rounded-2xl shadow-lg border-2 border-lime-100 hover:border-lime-300 transition-all duration-300 relay-card animate-fadeInUp"
+                    style={{ animationDelay: `${index * 100}ms` }}
                   >
-                    <div className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
+                    <div className="p-6 relative z-10">
+                      <div className="flex items-start justify-between mb-6">
+                        <div className="flex items-center gap-4">
                           <input
                             type="checkbox"
                             checked={selectedRelays.includes(relay.id)}
                             onChange={() => handleSelectRelay(relay.id)}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            className="h-5 w-5 text-lime-500 focus:ring-lime-400 border-2 border-lime-300 rounded transition-all duration-300"
                           />
                           <div>
-                            <h3 className="font-semibold text-gray-900">{relay.poolName || `Relay ${relay.code}`}</h3>
-                            <p className="text-sm text-gray-600">Kode: {relay.code}</p>
+                            <h3 className="font-bold text-xl text-gray-800 mb-1">
+                              {relay.poolName || `Relay ${relay.code}`}
+                            </h3>
+                            <p className="text-lime-600 font-semibold">Kode: {relay.code}</p>
                           </div>
                         </div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(relay.val)}`}>
+                        <span
+                          className={`px-4 py-2 rounded-xl text-sm font-bold status-badge ${getStatusColor(relay.val)} ${
+                            relay.val ? "animate-relayPulse" : ""
+                          }`}
+                        >
                           {getStatusText(relay.val)}
                         </span>
                       </div>
-                      <div className="flex gap-2 mt-4">
+
+                      <div className="grid grid-cols-2 gap-3">
                         <button
                           onClick={() => handleSingleRelayToggle(relay)}
                           disabled={apiLoading}
-                          className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 ${
+                          className={`px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 disabled:opacity-50 shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple ${
                             relay.val
-                              ? "bg-orange-100 text-orange-700 hover:bg-orange-200"
-                              : "bg-green-100 text-green-700 hover:bg-green-200"
+                              ? "bg-gradient-to-r from-orange-400 to-red-500 text-white hover:from-orange-500 hover:to-red-600"
+                              : "bg-gradient-to-r from-lime-400 to-green-500 text-white hover:from-lime-500 hover:to-green-600"
                           }`}
                         >
                           {relay.val ? (
                             <>
-                              <PowerOff size={14} className="inline mr-1" />
+                              <PowerOff size={16} className="inline mr-2" />
                               Turn OFF
                             </>
                           ) : (
                             <>
-                              <Power size={14} className="inline mr-1" />
+                              <Power size={16} className="inline mr-2" />
                               Turn ON
                             </>
                           )}
                         </button>
+
                         <button
                           disabled={apiLoading}
-                          className="px-3 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 rounded-md text-sm transition-colors"
+                          className="px-4 py-3 bg-gradient-to-r from-gray-400 to-gray-500 text-white hover:from-gray-500 hover:to-gray-600 disabled:opacity-50 rounded-xl text-sm transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
                         >
-                          <Edit3 size={14} />
+                          <Edit3 size={16} />
                         </button>
                       </div>
                     </div>
