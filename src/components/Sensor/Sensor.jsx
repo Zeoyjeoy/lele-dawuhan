@@ -1,8 +1,22 @@
 "use client"
+
 import { useState, useEffect } from "react"
-import { ArrowLeft, RefreshCw, TrendingUp, Battery, Zap, Activity, Thermometer, Droplets } from "lucide-react"
+import {
+  ArrowLeft,
+  RefreshCw,
+  TrendingUp,
+  Battery,
+  Activity,
+  Thermometer,
+  Droplets,
+  Sun,
+  Power,
+  BarChart3,
+  Eye,
+} from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../Sidebar/Sidebar"
+import "./Sensor.css"
 
 // Enhanced Chart Component with detailed data display
 const SimpleLineChart = ({ data, dataKey, color, title, unit = "" }) => {
@@ -30,18 +44,17 @@ const SimpleLineChart = ({ data, dataKey, color, title, unit = "" }) => {
   }
 
   return (
-    <div className="w-full">
-      <div className="flex items-center justify-between mb-2">
-        <h4 className="text-sm font-medium text-gray-700">{title}</h4>
+    <div className="w-full chart-container p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="text-sm font-semibold text-gray-800">{title}</h4>
         <button
           onClick={() => setShowTable(!showTable)}
-          className="text-xs text-blue-600 hover:text-blue-800 underline"
+          className="text-xs text-lime-600 hover:text-lime-800 underline font-medium transition-colors"
         >
           {showTable ? "Hide Details" : "Show Details"}
         </button>
       </div>
-
-      <div className="relative h-32 bg-gray-50 rounded border">
+      <div className="relative h-32 bg-gradient-to-br from-lime-50 to-green-50 rounded-xl border-2 border-lime-100 chart-hover">
         <svg
           className="w-full h-full cursor-crosshair"
           viewBox="0 0 400 120"
@@ -52,7 +65,7 @@ const SimpleLineChart = ({ data, dataKey, color, title, unit = "" }) => {
           {/* Grid lines */}
           <defs>
             <pattern id={`grid-${dataKey}`} width="40" height="24" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 24" fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
+              <path d="M 40 0 L 0 0 0 24" fill="none" stroke="#d1fae5" strokeWidth="0.5" />
             </pattern>
           </defs>
           <rect width="400" height="120" fill={`url(#grid-${dataKey})`} />
@@ -61,7 +74,8 @@ const SimpleLineChart = ({ data, dataKey, color, title, unit = "" }) => {
           <polyline
             fill="none"
             stroke={color}
-            strokeWidth="2"
+            strokeWidth="3"
+            className="animate-chartPulse"
             points={data
               .map((item, index) => {
                 const x = (index / (data.length - 1)) * 400
@@ -75,7 +89,16 @@ const SimpleLineChart = ({ data, dataKey, color, title, unit = "" }) => {
           {data.map((item, index) => {
             const x = (index / (data.length - 1)) * 400
             const y = 120 - ((item[dataKey] - minValue) / range) * 100
-            return <circle key={index} cx={x} cy={y} r="2" fill={color} className="opacity-60 hover:opacity-100" />
+            return (
+              <circle
+                key={index}
+                cx={x}
+                cy={y}
+                r="3"
+                fill={color}
+                className="opacity-80 hover:opacity-100 transition-opacity"
+              />
+            )
           })}
 
           {/* Hover indicator */}
@@ -87,32 +110,33 @@ const SimpleLineChart = ({ data, dataKey, color, title, unit = "" }) => {
                 x2={(hoveredPoint.index / (data.length - 1)) * 400}
                 y2="120"
                 stroke="#374151"
-                strokeWidth="1"
-                strokeDasharray="2,2"
+                strokeWidth="2"
+                strokeDasharray="4,4"
               />
               <circle
                 cx={(hoveredPoint.index / (data.length - 1)) * 400}
                 cy={120 - ((hoveredPoint.data[dataKey] - minValue) / range) * 100}
-                r="4"
+                r="6"
                 fill={color}
                 stroke="white"
-                strokeWidth="2"
+                strokeWidth="3"
+                className="animate-pulse"
               />
             </g>
           )}
         </svg>
 
         {/* Stats display */}
-        <div className="absolute top-2 right-2 text-xs text-gray-600 bg-white bg-opacity-90 p-1 rounded">
-          <div>
+        <div className="absolute top-2 right-2 text-xs text-gray-700 bg-white/90 backdrop-blur-sm p-2 rounded-lg shadow-sm border border-lime-200">
+          <div className="font-semibold text-green-600">
             Max: {maxValue.toFixed(1)}
             {unit}
           </div>
-          <div>
+          <div className="font-medium text-lime-600">
             Avg: {avgValue.toFixed(1)}
             {unit}
           </div>
-          <div>
+          <div className="font-medium text-gray-600">
             Min: {minValue.toFixed(1)}
             {unit}
           </div>
@@ -120,34 +144,34 @@ const SimpleLineChart = ({ data, dataKey, color, title, unit = "" }) => {
 
         {/* Hover tooltip */}
         {hoveredPoint && (
-          <div className="absolute bottom-2 left-2 text-xs bg-gray-800 text-white p-2 rounded shadow-lg">
-            <div className="font-medium">{hoveredPoint.data.time || "N/A"}</div>
-            <div>
+          <div className="absolute bottom-2 left-2 text-xs bg-gradient-to-r from-lime-600 to-green-600 text-white p-3 rounded-lg shadow-xl border border-lime-300">
+            <div className="font-semibold">{hoveredPoint.data.time || "N/A"}</div>
+            <div className="font-medium">
               {title}: {Number.parseFloat(hoveredPoint.data[dataKey] || 0).toFixed(2)}
               {unit}
             </div>
-            <div className="text-gray-300">{hoveredPoint.data.date || "N/A"}</div>
+            <div className="text-lime-100 text-xs">{hoveredPoint.data.date || "N/A"}</div>
           </div>
         )}
       </div>
 
       {/* Detailed data table */}
       {showTable && (
-        <div className="mt-4 max-h-48 overflow-y-auto border rounded">
+        <div className="mt-4 max-h-48 overflow-y-auto border-2 border-lime-200 rounded-xl data-table">
           <table className="w-full text-xs">
-            <thead className="bg-gray-50 sticky top-0">
+            <thead className="bg-gradient-to-r from-lime-100 to-green-100 sticky top-0">
               <tr>
-                <th className="px-2 py-1 text-left">Time</th>
-                <th className="px-2 py-1 text-left">Date</th>
-                <th className="px-2 py-1 text-right">{title}</th>
+                <th className="px-3 py-2 text-left font-semibold text-gray-800">Time</th>
+                <th className="px-3 py-2 text-left font-semibold text-gray-800">Date</th>
+                <th className="px-3 py-2 text-right font-semibold text-gray-800">{title}</th>
               </tr>
             </thead>
             <tbody>
               {data.map((item, index) => (
-                <tr key={index} className="border-t hover:bg-gray-50">
-                  <td className="px-2 py-1">{item.time || "N/A"}</td>
-                  <td className="px-2 py-1">{item.date || "N/A"}</td>
-                  <td className="px-2 py-1 text-right font-mono">
+                <tr key={index} className="border-t border-lime-100 hover:bg-lime-50 transition-colors">
+                  <td className="px-3 py-2 font-medium">{item.time || "N/A"}</td>
+                  <td className="px-3 py-2">{item.date || "N/A"}</td>
+                  <td className="px-3 py-2 text-right font-mono font-semibold text-green-600">
                     {Number.parseFloat(item[dataKey] || 0).toFixed(2)}
                     {unit}
                   </td>
@@ -178,7 +202,6 @@ const ComprehensiveDataTable = ({ data }) => {
   })
 
   const paginatedData = sortedData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-
   const totalPages = Math.ceil(sortedData.length / itemsPerPage)
 
   const handleSort = (field) => {
@@ -209,27 +232,28 @@ const ComprehensiveDataTable = ({ data }) => {
   ]
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Data Detail Lengkap</h3>
-        <div className="text-sm text-gray-600">Total: {data.length} records</div>
+    <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 data-table animate-fadeInUp">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-2xl font-bold text-gray-800 gradient-text">Data Detail Lengkap</h3>
+        <div className="text-sm text-gray-600 bg-lime-100 px-4 py-2 rounded-xl font-semibold">
+          Total: {data.length} records
+        </div>
       </div>
-
       <div className="overflow-x-auto">
         <table className="w-full text-xs border-collapse">
           <thead>
-            <tr className="bg-gray-50">
+            <tr className="bg-gradient-to-r from-lime-100 to-green-100">
               {fields.map((field) => (
                 <th
                   key={field.key}
-                  className="px-2 py-2 text-left border cursor-pointer hover:bg-gray-100"
+                  className="px-3 py-3 text-left border-2 border-lime-200 cursor-pointer hover:bg-lime-200 transition-colors font-semibold"
                   onClick={() => handleSort(field.key)}
                 >
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
                     {field.label}
-                    {field.unit && <span className="text-gray-400">({field.unit})</span>}
+                    {field.unit && <span className="text-gray-500">({field.unit})</span>}
                     {sortField === field.key && (
-                      <span className="text-blue-600">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                      <span className="text-lime-600 font-bold">{sortDirection === "asc" ? "↑" : "↓"}</span>
                     )}
                   </div>
                 </th>
@@ -238,9 +262,9 @@ const ComprehensiveDataTable = ({ data }) => {
           </thead>
           <tbody>
             {paginatedData.map((item, index) => (
-              <tr key={index} className="hover:bg-gray-50">
+              <tr key={index} className="hover:bg-lime-50 transition-colors">
                 {fields.map((field) => (
-                  <td key={field.key} className="px-2 py-2 border font-mono text-right">
+                  <td key={field.key} className="px-3 py-3 border border-lime-100 font-mono text-right">
                     {field.format
                       ? field.format(item[field.key])
                       : item[field.key]
@@ -256,26 +280,26 @@ const ComprehensiveDataTable = ({ data }) => {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
+        <div className="flex items-center justify-between mt-6 pt-4 border-t-2 border-lime-100">
           <div className="text-sm text-gray-600">
             Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, data.length)} of{" "}
             {data.length} entries
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <button
               onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              className="px-4 py-2 text-sm border-2 border-lime-200 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-lime-50 transition-colors font-semibold"
             >
               Previous
             </button>
-            <span className="px-3 py-1 text-sm">
+            <span className="px-4 py-2 text-sm bg-lime-100 rounded-xl font-semibold">
               Page {currentPage} of {totalPages}
             </span>
             <button
               onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
-              className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              className="px-4 py-2 text-sm border-2 border-lime-200 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-lime-50 transition-colors font-semibold"
             >
               Next
             </button>
@@ -297,7 +321,6 @@ const Sensor = () => {
   const [sidebarVisible, setSidebarVisible] = useState(true)
   const [activeTab, setActiveTab] = useState("realtime")
   const [showAllDetails, setShowAllDetails] = useState(false)
-
   const navigate = useNavigate()
 
   // API Base URLs
@@ -349,7 +372,6 @@ const Sensor = () => {
 
     try {
       setRefreshing(true)
-
       const response = await fetch(`${SENSOR_API_BASE}/latest?code=${poolCode}&id=${userSession.id}`, {
         method: "GET",
         headers: {
@@ -383,7 +405,6 @@ const Sensor = () => {
 
     try {
       setLoading(true)
-
       const response = await fetch(`${SENSOR_API_BASE}?code=${poolCode}&id=${userSession.id}`, {
         method: "GET",
         headers: {
@@ -495,43 +516,51 @@ const Sensor = () => {
 
   if (loading && !latestData) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat data sensor...</p>
+      <div className="min-h-screen bg-gradient-to-br from-lime-50 via-green-50 to-emerald-50 flex items-center justify-center">
+        <div className="text-center animate-fadeInUp">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-lime-200 border-t-lime-500 mx-auto mb-6"></div>
+            <div className="absolute inset-0 rounded-full h-16 w-16 border-4 border-transparent border-t-green-400 animate-pulse mx-auto"></div>
+          </div>
+          <p className="text-gray-700 font-medium text-lg">Memuat data sensor...</p>
+          <p className="text-gray-500 text-sm mt-2">Mohon tunggu sebentar</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-lime-50 via-green-50 to-emerald-50 flex">
       {/* Sidebar */}
       {sidebarVisible && <Sidebar />}
 
       {/* Main Content */}
-      <div className="flex-grow p-6">
+      <div className="flex-grow">
         {/* Header */}
-        <div className="bg-white shadow-sm border-b mb-6">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-6">
-              <div className="flex items-center gap-4">
+        <div className="bg-gradient-to-r from-lime-400 via-green-400 to-emerald-400 shadow-xl">
+          <div className="max-w-7xl mx-auto px-6 lg:px-8">
+            <div className="flex justify-between items-center py-8">
+              <div className="flex items-center gap-6 animate-slideInFromLeft">
                 <button
                   onClick={() => navigate("/homepage")}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-3 hover:bg-white/20 rounded-xl transition-all duration-300 transform hover:scale-110"
                 >
-                  <ArrowLeft size={20} className="text-gray-600" />
+                  <ArrowLeft size={24} className="text-white" />
                 </button>
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Monitoring Sensor</h1>
-                  <p className="text-gray-600 mt-1">Pantau data sensor kolam budidaya secara real-time</p>
+                  <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg flex items-center gap-3">
+                    <Activity size={36} />
+                    Monitoring Sensor
+                  </h1>
+                  <p className="text-lime-100 text-lg">Pantau data sensor kolam budidaya secara real-time</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
+
+              <div className="flex items-center gap-4 animate-slideInFromRight">
                 <select
                   value={selectedPool}
                   onChange={(e) => handlePoolChange(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-4 py-3 border-2 border-white/30 rounded-xl focus:outline-none focus:ring-4 focus:ring-white/20 focus:border-white/50 bg-white/90 backdrop-blur-sm font-semibold text-gray-700 transition-all duration-300"
                 >
                   <option value="">Pilih Kolam</option>
                   {pools.map((pool) => (
@@ -543,7 +572,7 @@ const Sensor = () => {
                 <button
                   onClick={handleRefresh}
                   disabled={refreshing}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                  className="bg-white hover:bg-lime-50 text-green-700 px-6 py-3 rounded-xl flex items-center gap-3 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple font-semibold"
                 >
                   <RefreshCw size={20} className={refreshing ? "animate-spin" : ""} />
                   Refresh
@@ -554,110 +583,118 @@ const Sensor = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 -mt-4 relative z-10">
+          <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-2">
+            <nav className="flex space-x-2">
               <button
                 onClick={() => setActiveTab("realtime")}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`flex-1 py-4 px-6 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-3 ${
                   activeTab === "realtime"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "bg-gradient-to-r from-lime-400 to-green-500 text-white shadow-lg transform scale-105"
+                    : "text-gray-600 hover:bg-lime-50 hover:text-lime-700"
                 }`}
               >
-                <Activity className="inline mr-2" size={16} />
+                <Activity size={20} />
                 Data Real-time
               </button>
               <button
                 onClick={() => setActiveTab("history")}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`flex-1 py-4 px-6 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-3 ${
                   activeTab === "history"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "bg-gradient-to-r from-lime-400 to-green-500 text-white shadow-lg transform scale-105"
+                    : "text-gray-600 hover:bg-lime-50 hover:text-lime-700"
                 }`}
               >
-                <TrendingUp className="inline mr-2" size={16} />
+                <TrendingUp size={20} />
                 Grafik Historis
               </button>
             </nav>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
           {/* Real-time Data Tab */}
           {activeTab === "realtime" && (
-            <div>
+            <div className="tab-content">
               {!selectedPool ? (
-                <div className="text-center py-12">
-                  <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Activity size={32} className="text-gray-400" />
+                <div className="text-center py-16 animate-fadeInUp">
+                  <div className="w-32 h-32 bg-gradient-to-br from-lime-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
+                    <Activity size={48} className="text-lime-500" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Pilih Kolam</h3>
-                  <p className="text-gray-600">Pilih kolam untuk melihat data sensor</p>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-4">Pilih Kolam</h3>
+                  <p className="text-gray-600 text-lg">Pilih kolam untuk melihat data sensor</p>
                 </div>
               ) : !latestData ? (
-                <div className="text-center py-12">
-                  <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Activity size={32} className="text-gray-400" />
+                <div className="text-center py-16 animate-fadeInUp">
+                  <div className="w-32 h-32 bg-gradient-to-br from-lime-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
+                    <Activity size={48} className="text-lime-500" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak Ada Data</h3>
-                  <p className="text-gray-600">Belum ada data sensor untuk kolam {selectedPool}</p>
-                  <p className="text-gray-500 text-sm mt-2">
-                    Gunakan MicroController untuk mengirim data sensor ke server
-                  </p>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-4">Tidak Ada Data</h3>
+                  <p className="text-gray-600 text-lg mb-4">Belum ada data sensor untuk kolam {selectedPool}</p>
+                  <p className="text-gray-500 text-sm">Gunakan MicroController untuk mengirim data sensor ke server</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 realtime-data">
                   {/* Solar Panel Metrics */}
-                  <div className="bg-white rounded-lg shadow-sm border p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Panel Surya</h3>
-                      <Zap className="text-yellow-500" size={24} />
+                  <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 sensor-card animate-fadeInUp delay-100">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-xl font-bold text-gray-800">Panel Surya</h3>
+                      <div className="bg-gradient-to-r from-yellow-400 to-orange-500 p-3 rounded-xl">
+                        <Sun size={24} className="text-white" />
+                      </div>
                     </div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Tegangan:</span>
-                        <span className="font-medium">{formatValue(latestData.pvVoltage, "V")}</span>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">Tegangan:</span>
+                        <span className="font-bold text-lg metric-value">{formatValue(latestData.pvVoltage, "V")}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Arus:</span>
-                        <span className="font-medium">{formatValue(latestData.pvCurrent, "A")}</span>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">Arus:</span>
+                        <span className="font-bold text-lg metric-value">{formatValue(latestData.pvCurrent, "A")}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Daya:</span>
-                        <span className="font-medium text-green-600">{formatValue(latestData.pvPower, "W")}</span>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">Daya:</span>
+                        <span className="font-bold text-lg text-green-600 metric-value">
+                          {formatValue(latestData.pvPower, "W")}
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   {/* Battery Metrics - ENHANCED */}
-                  <div className="bg-white rounded-lg shadow-sm border p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Baterai</h3>
-                      <Battery className="text-blue-500" size={24} />
+                  <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 sensor-card animate-fadeInUp delay-200">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-xl font-bold text-gray-800">Baterai</h3>
+                      <div className="bg-gradient-to-r from-green-400 to-emerald-500 p-3 rounded-xl">
+                        <Battery size={24} className="text-white" />
+                      </div>
                     </div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Tegangan:</span>
-                        <span className="font-medium">{formatValue(latestData.battVoltage, "V")}</span>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">Tegangan:</span>
+                        <span className="font-bold text-lg metric-value">
+                          {formatValue(latestData.battVoltage, "V")}
+                        </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Arus Charge:</span>
-                        <span className="font-medium">{formatValue(latestData.battChCurrent, "A")}</span>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">Arus Charge:</span>
+                        <span className="font-bold text-lg metric-value">
+                          {formatValue(latestData.battChCurrent, "A")}
+                        </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Arus Discharge:</span>
-                        <span className="font-medium text-orange-600">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">Arus Discharge:</span>
+                        <span className="font-bold text-lg text-orange-600 metric-value">
                           {formatValue(latestData.battDischCurrent, "A")}
                         </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Suhu Baterai:</span>
-                        <span className="font-medium">{formatValue(latestData.battTemp, "°C")}</span>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">Suhu Baterai:</span>
+                        <span className="font-bold text-lg metric-value">{formatValue(latestData.battTemp, "°C")}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Persentase:</span>
-                        <span className={`font-bold ${getStatusColor(latestData.battPercentage)}`}>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">Persentase:</span>
+                        <span className={`font-bold text-xl ${getStatusColor(latestData.battPercentage)} metric-value`}>
                           {getBatteryIcon(latestData.battPercentage)} {formatValue(latestData.battPercentage, "%")}
                         </span>
                       </div>
@@ -665,23 +702,29 @@ const Sensor = () => {
                   </div>
 
                   {/* Load Metrics */}
-                  <div className="bg-white rounded-lg shadow-sm border p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Beban</h3>
-                      <Activity className="text-purple-500" size={24} />
+                  <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 sensor-card animate-fadeInUp delay-300">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-xl font-bold text-gray-800">Beban</h3>
+                      <div className="bg-gradient-to-r from-purple-400 to-pink-500 p-3 rounded-xl">
+                        <Power size={24} className="text-white" />
+                      </div>
                     </div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Arus:</span>
-                        <span className="font-medium">{formatValue(latestData.loadCurrent, "A")}</span>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">Arus:</span>
+                        <span className="font-bold text-lg metric-value">
+                          {formatValue(latestData.loadCurrent, "A")}
+                        </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Daya:</span>
-                        <span className="font-medium text-purple-600">{formatValue(latestData.loadPower, "W")}</span>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">Daya:</span>
+                        <span className="font-bold text-lg text-purple-600 metric-value">
+                          {formatValue(latestData.loadPower, "W")}
+                        </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Waktu:</span>
-                        <span className="font-medium text-sm">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">Waktu:</span>
+                        <span className="font-medium text-sm text-gray-700">
                           {latestData.timestamp ? new Date(latestData.timestamp).toLocaleString("id-ID") : "N/A"}
                         </span>
                       </div>
@@ -689,47 +732,55 @@ const Sensor = () => {
                   </div>
 
                   {/* Environment Metrics */}
-                  <div className="bg-white rounded-lg shadow-sm border p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Lingkungan</h3>
-                      <Thermometer className="text-orange-500" size={24} />
-                    </div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Suhu Lingkungan:</span>
-                        <span className="font-medium">{formatValue(latestData.envTemp, "°C")}</span>
+                  <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 sensor-card animate-fadeInUp delay-400">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-xl font-bold text-gray-800">Lingkungan</h3>
+                      <div className="bg-gradient-to-r from-orange-400 to-red-500 p-3 rounded-xl">
+                        <Thermometer size={24} className="text-white" />
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Status:</span>
-                        <span className={`font-medium ${getTempStatusColor(latestData.envTemp)}`}>
-                          {latestData.envTemp >= 26 && latestData.envTemp <= 32 ? "Normal" : "Perlu Perhatian"}
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">Suhu Lingkungan:</span>
+                        <span className="font-bold text-lg metric-value">{formatValue(latestData.envTemp, "°C")}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">Status:</span>
+                        <span
+                          className={`font-bold text-lg ${getTempStatusColor(latestData.envTemp)} status-indicator`}
+                        >
+                          {latestData.envTemp >= 26 && latestData.envTemp <= 32 ? "🟢 Normal" : "🟡 Perlu Perhatian"}
                         </span>
                       </div>
                     </div>
                   </div>
 
                   {/* Bioflok Water Quality */}
-                  <div className="bg-white rounded-lg shadow-sm border p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Kualitas Air</h3>
-                      <Droplets className="text-cyan-500" size={24} />
+                  <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 sensor-card animate-fadeInUp delay-500">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-xl font-bold text-gray-800">Kualitas Air</h3>
+                      <div className="bg-gradient-to-r from-cyan-400 to-blue-500 p-3 rounded-xl">
+                        <Droplets size={24} className="text-white" />
+                      </div>
                     </div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">pH Bioflok:</span>
-                        <span className={`font-medium ${getPhStatusColor(latestData.phBioflok)}`}>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">pH Bioflok:</span>
+                        <span className={`font-bold text-lg ${getPhStatusColor(latestData.phBioflok)} metric-value`}>
                           {formatValue(latestData.phBioflok)}
                         </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Suhu Air:</span>
-                        <span className={`font-medium ${getTempStatusColor(latestData.tempBioflok)}`}>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">Suhu Air:</span>
+                        <span
+                          className={`font-bold text-lg ${getTempStatusColor(latestData.tempBioflok)} metric-value`}
+                        >
                           {formatValue(latestData.tempBioflok, "°C")}
                         </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">DO (Oksigen):</span>
-                        <span className={`font-medium ${getDoStatusColor(latestData.doBioflok)}`}>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">DO (Oksigen):</span>
+                        <span className={`font-bold text-lg ${getDoStatusColor(latestData.doBioflok)} metric-value`}>
                           {formatValue(latestData.doBioflok, " mg/L")}
                         </span>
                       </div>
@@ -737,23 +788,25 @@ const Sensor = () => {
                   </div>
 
                   {/* System Status Summary */}
-                  <div className="bg-white rounded-lg shadow-sm border p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Status Sistem</h3>
-                      <Activity className="text-green-500" size={24} />
+                  <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 sensor-card animate-fadeInUp delay-600">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-xl font-bold text-gray-800">Status Sistem</h3>
+                      <div className="bg-gradient-to-r from-lime-400 to-green-500 p-3 rounded-xl animate-pulse">
+                        <BarChart3 size={24} className="text-white" />
+                      </div>
                     </div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Kode Kolam:</span>
-                        <span className="font-medium">{latestData.code}</span>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">Kode Kolam:</span>
+                        <span className="font-bold text-lg text-lime-600">{latestData.code}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">User ID:</span>
-                        <span className="font-medium">{latestData.iduser}</span>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">User ID:</span>
+                        <span className="font-bold text-lg">{latestData.iduser}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Status Keseluruhan:</span>
-                        <span className="font-medium text-green-600">🟢 Normal</span>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">Status Keseluruhan:</span>
+                        <span className="font-bold text-lg text-green-600 animate-pulse">🟢 Normal</span>
                       </div>
                     </div>
                   </div>
@@ -764,35 +817,34 @@ const Sensor = () => {
 
           {/* Historical Data Tab */}
           {activeTab === "history" && (
-            <div>
+            <div className="tab-content">
               {!selectedPool ? (
-                <div className="text-center py-12">
-                  <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <TrendingUp size={32} className="text-gray-400" />
+                <div className="text-center py-16 animate-fadeInUp">
+                  <div className="w-32 h-32 bg-gradient-to-br from-lime-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
+                    <TrendingUp size={48} className="text-lime-500" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Pilih Kolam</h3>
-                  <p className="text-gray-600">Pilih kolam untuk melihat grafik historis</p>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-4">Pilih Kolam</h3>
+                  <p className="text-gray-600 text-lg">Pilih kolam untuk melihat grafik historis</p>
                 </div>
               ) : historicalData.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <TrendingUp size={32} className="text-gray-400" />
+                <div className="text-center py-16 animate-fadeInUp">
+                  <div className="w-32 h-32 bg-gradient-to-br from-lime-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
+                    <TrendingUp size={48} className="text-lime-500" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak Ada Data Historis</h3>
-                  <p className="text-gray-600">Belum ada data historis untuk kolam {selectedPool}</p>
-                  <p className="text-gray-500 text-sm mt-2">
-                    Gunakan MicroController untuk mengirim data sensor ke server
-                  </p>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-4">Tidak Ada Data Historis</h3>
+                  <p className="text-gray-600 text-lg mb-4">Belum ada data historis untuk kolam {selectedPool}</p>
+                  <p className="text-gray-500 text-sm">Gunakan MicroController untuk mengirim data sensor ke server</p>
                 </div>
               ) : (
                 <div className="space-y-8">
                   {/* View Toggle */}
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-gray-900">Data Historis - {selectedPool}</h2>
+                  <div className="flex items-center justify-between animate-fadeInUp">
+                    <h2 className="text-2xl font-bold text-gray-800 gradient-text">Data Historis - {selectedPool}</h2>
                     <button
                       onClick={() => setShowAllDetails(!showAllDetails)}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
+                      className="px-6 py-3 bg-gradient-to-r from-lime-400 to-green-500 hover:from-lime-500 hover:to-green-600 text-white rounded-xl text-sm transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple flex items-center gap-2"
                     >
+                      <Eye size={18} />
                       {showAllDetails ? "Show Charts" : "Show All Details"}
                     </button>
                   </div>
@@ -802,9 +854,9 @@ const Sensor = () => {
                   ) : (
                     <>
                       {/* Power Chart */}
-                      <div className="bg-white rounded-lg shadow-sm border p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Grafik Daya (Power)</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 animate-fadeInUp delay-100">
+                        <h3 className="text-2xl font-bold text-gray-800 mb-6 gradient-text">Grafik Daya (Power)</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                           <SimpleLineChart
                             data={historicalData}
                             dataKey="pvPower"
@@ -830,9 +882,11 @@ const Sensor = () => {
                       </div>
 
                       {/* Temperature Charts */}
-                      <div className="bg-white rounded-lg shadow-sm border p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Grafik Suhu (Temperature)</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 animate-fadeInUp delay-200">
+                        <h3 className="text-2xl font-bold text-gray-800 mb-6 gradient-text">
+                          Grafik Suhu (Temperature)
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                           <SimpleLineChart
                             data={historicalData}
                             dataKey="envTemp"
@@ -858,9 +912,9 @@ const Sensor = () => {
                       </div>
 
                       {/* Water Quality Charts */}
-                      <div className="bg-white rounded-lg shadow-sm border p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Kualitas Air Bioflok</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 animate-fadeInUp delay-300">
+                        <h3 className="text-2xl font-bold text-gray-800 mb-6 gradient-text">Kualitas Air Bioflok</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <SimpleLineChart
                             data={historicalData}
                             dataKey="phBioflok"
@@ -879,9 +933,11 @@ const Sensor = () => {
                       </div>
 
                       {/* Battery Enhanced Charts */}
-                      <div className="bg-white rounded-lg shadow-sm border p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Monitoring Baterai Lengkap</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 animate-fadeInUp delay-400">
+                        <h3 className="text-2xl font-bold text-gray-800 mb-6 gradient-text">
+                          Monitoring Baterai Lengkap
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <SimpleLineChart
                             data={historicalData}
                             dataKey="battPercentage"
@@ -900,9 +956,11 @@ const Sensor = () => {
                       </div>
 
                       {/* Voltage Chart */}
-                      <div className="bg-white rounded-lg shadow-sm border p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Grafik Tegangan (Voltage)</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 animate-fadeInUp delay-500">
+                        <h3 className="text-2xl font-bold text-gray-800 mb-6 gradient-text">
+                          Grafik Tegangan (Voltage)
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <SimpleLineChart
                             data={historicalData}
                             dataKey="pvVoltage"
@@ -921,9 +979,9 @@ const Sensor = () => {
                       </div>
 
                       {/* Current Chart */}
-                      <div className="bg-white rounded-lg shadow-sm border p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Grafik Arus (Current)</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 animate-fadeInUp delay-600">
+                        <h3 className="text-2xl font-bold text-gray-800 mb-6 gradient-text">Grafik Arus (Current)</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                           <SimpleLineChart
                             data={historicalData}
                             dataKey="pvCurrent"
