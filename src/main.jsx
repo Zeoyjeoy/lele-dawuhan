@@ -4,6 +4,10 @@ import './index.css'
 import App from './App.jsx'
 import "./components/Sidebar/Sidebar.css"
 import "./components/Dashboard/Dashboard.css"
+import "./components/Homepage/Homepage.css"
+import "./components/Relay/Relay.css"
+import "./components/Sensor/Sensor.css"
+import "./components/MicroController/MicroController.css"
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
