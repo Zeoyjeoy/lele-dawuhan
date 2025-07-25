@@ -683,6 +683,12 @@ const Sensor = () => {
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">Daya Charge:</span>
+                        <span className="font-bold text-lg text-green-600 metric-value">
+                          {formatValue(latestData.battChPower, "W")}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
                         <span className="text-gray-600 font-medium">Arus Discharge:</span>
                         <span className="font-bold text-lg text-orange-600 metric-value">
                           {formatValue(latestData.battDischCurrent, "A")}
