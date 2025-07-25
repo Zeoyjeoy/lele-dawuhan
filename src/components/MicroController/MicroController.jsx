@@ -543,19 +543,6 @@ const MicroController = () => {
                       />
                     </div>
 
-                    {/* Tambahkan field battChPower yang terlewat */}
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Charge Power (W)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={sensorData.battChPower}
-                        onChange={(e) => handleSensorInputChange("battChPower", e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
-                        placeholder="11.2"
-                      />
-                    </div>
-
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Discharge Current (A)</label>
                       <input
@@ -659,19 +646,6 @@ const MicroController = () => {
                         onChange={(e) => handleSensorInputChange("loadCurrent", e.target.value)}
                         className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
                         placeholder="0.5"
-                      />
-                    </div>
-
-                    {/* Tambahkan field loadPower yang terlewat */}
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Load Power (W)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={sensorData.loadPower}
-                        onChange={(e) => handleSensorInputChange("loadPower", e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
-                        placeholder="4.1"
                       />
                     </div>
                   </div>

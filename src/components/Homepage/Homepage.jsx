@@ -1,9 +1,7 @@
 "use client"
-
 import { useState, useEffect } from "react"
 import {
   Plus,
-  Trash2,
   Power,
   PowerOff,
   Edit3,
@@ -25,7 +23,7 @@ const Homepage = () => {
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [newPoolName, setNewPoolName] = useState("")
-  const [newPoolCode, setNewPoolCode] = useState("")
+  const [generatedCode, setGeneratedCode] = useState("")
   const [notification, setNotification] = useState(null)
   const [apiLoading, setApiLoading] = useState(false)
   const [userSession, setUserSession] = useState(null)
@@ -34,6 +32,55 @@ const Homepage = () => {
 
   // API Base URL
   const API_BASE = "http://43.165.198.49:8089/api/kolam"
+
+  // localStorage keys
+  const POOLS_STORAGE_KEY = "kolam_pools_data"
+  const LAST_SYNC_KEY = "kolam_last_sync"
+
+  // localStorage functions
+  const savePoolsToStorage = (poolsData) => {
+    try {
+      localStorage.setItem(POOLS_STORAGE_KEY, JSON.stringify(poolsData))
+      localStorage.setItem(LAST_SYNC_KEY, new Date().toISOString())
+      console.log("Pools saved to localStorage:", poolsData)
+    } catch (error) {
+      console.error("Error saving pools to localStorage:", error)
+    }
+  }
+
+  const loadPoolsFromStorage = () => {
+    try {
+      const savedPools = localStorage.getItem(POOLS_STORAGE_KEY)
+      if (savedPools) {
+        const parsedPools = JSON.parse(savedPools)
+        console.log("Pools loaded from localStorage:", parsedPools)
+        return parsedPools
+      }
+    } catch (error) {
+      console.error("Error loading pools from localStorage:", error)
+    }
+    return []
+  }
+
+  const getLastSyncTime = () => {
+    try {
+      const lastSync = localStorage.getItem(LAST_SYNC_KEY)
+      return lastSync ? new Date(lastSync) : null
+    } catch (error) {
+      console.error("Error getting last sync time:", error)
+      return null
+    }
+  }
+
+  // Generate unique pool code
+  const generatePoolCode = () => {
+    const prefix = "KLM"
+    const timestamp = Date.now().toString().slice(-6) // Last 6 digits of timestamp
+    const random = Math.floor(Math.random() * 100)
+      .toString()
+      .padStart(2, "0")
+    return `${prefix}${timestamp}${random}`
+  }
 
   // Get user session on component mount
   useEffect(() => {
@@ -55,15 +102,23 @@ const Homepage = () => {
 
   // Fetch all pools
   const fetchPools = async () => {
+    // Load from localStorage first
+    const cachedPools = loadPoolsFromStorage()
+    if (cachedPools.length > 0) {
+      setPools(cachedPools)
+      console.log("Loaded pools from localStorage")
+    }
+
     if (!userSession?.id || !userSession?.token) {
-      console.log("No user session or token, cannot fetch pools")
+      console.log("No user session or token, using cached data only")
+      setLoading(false)
       return
     }
 
     try {
       setLoading(true)
       const url = `${API_BASE}/select/all?id=${userSession.id}`
-      console.log("Fetching pools from:", url)
+      console.log("Fetching pools from API:", url)
 
       const response = await fetch(url, {
         method: "GET",
@@ -74,24 +129,25 @@ const Homepage = () => {
       })
 
       console.log("Response status:", response.status)
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
       const data = await response.json()
-      console.log("Pools data received:", data)
+      console.log("Pools data received from API:", data)
 
       if (data.status === "200 OK" && data.payload) {
         setPools(data.payload)
-        console.log("Pools set:", data.payload)
+        savePoolsToStorage(data.payload) // Save to localStorage
+        console.log("Pools updated from API and saved to localStorage")
       } else {
-        setPools([])
-        console.log("No pools found or invalid response")
+        console.log("No pools found or invalid response, keeping cached data")
       }
     } catch (error) {
-      console.error("Error fetching pools:", error)
-      setPools([])
-      showNotification("Gagal memuat data kolam: " + error.message, "error")
+      console.error("Error fetching pools from API:", error)
+      showNotification("Menggunakan data tersimpan. " + error.message, "error")
+      // Keep using cached data if API fails
     } finally {
       setLoading(false)
     }
@@ -116,10 +172,18 @@ const Homepage = () => {
     setSelectedPools((prev) => (prev.includes(poolId) ? prev.filter((id) => id !== poolId) : [...prev, poolId]))
   }
 
+  // Generate new code when form is opened
+  useEffect(() => {
+    if (showAddForm) {
+      const newCode = generatePoolCode()
+      setGeneratedCode(newCode)
+    }
+  }, [showAddForm])
+
   // Add new pool
   const handleAddPool = async () => {
-    if (!newPoolCode.trim()) {
-      showNotification("Kode kolam harus diisi", "error")
+    if (!newPoolName.trim()) {
+      showNotification("Nama kolam harus diisi", "error")
       return
     }
 
@@ -131,8 +195,8 @@ const Homepage = () => {
     try {
       setApiLoading(true)
       const requestData = {
-        name: newPoolName.trim() || null,
-        code: newPoolCode.trim(),
+        name: newPoolName.trim(),
+        code: generatedCode,
         iduser: userSession.id.toString(),
         status: true,
       }
@@ -149,6 +213,7 @@ const Homepage = () => {
       })
 
       console.log("Add pool response status:", response.status)
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -157,11 +222,13 @@ const Homepage = () => {
       console.log("Add pool response data:", data)
 
       if (data.status === "201 CREATED" && data.payload) {
-        setPools([...pools, data.payload])
+        const updatedPools = [...pools, data.payload]
+        setPools(updatedPools)
+        savePoolsToStorage(updatedPools) // Save to localStorage
         setNewPoolName("")
-        setNewPoolCode("")
+        setGeneratedCode("")
         setShowAddForm(false)
-        showNotification("Kolam berhasil ditambahkan")
+        showNotification(`Kolam berhasil ditambahkan dengan kode: ${generatedCode}`)
       } else {
         throw new Error("Invalid response format")
       }
@@ -181,13 +248,7 @@ const Homepage = () => {
         const pool = pools.find((p) => p.id === poolId)
         if (!pool) return null
 
-        const requestData = {
-          code: pool.code,
-          val: activate,
-          id: poolId,
-        }
-
-        console.log("Updating pool status:", requestData)
+        console.log("Updating pool status:", { code: pool.code, val: activate, id: poolId })
 
         const response = await fetch(`${API_BASE}/updatestatus?code=${pool.code}&val=${activate}&id=${poolId}`, {
           method: "PUT",
@@ -198,6 +259,7 @@ const Homepage = () => {
         })
 
         console.log(`Update status response for ${pool.code}:`, response.status)
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
@@ -211,12 +273,18 @@ const Homepage = () => {
       console.log("Bulk update results:", results)
 
       const successCount = results.filter((r) => r && r.success).length
+
       if (successCount > 0) {
-        setPools(pools.map((pool) => (selectedPools.includes(pool.id) ? { ...pool, status: activate } : pool)))
+        const updatedPools = pools.map((pool) =>
+          selectedPools.includes(pool.id) ? { ...pool, status: activate } : pool,
+        )
+        setPools(updatedPools)
+        savePoolsToStorage(updatedPools) // Save to localStorage
         showNotification(`${successCount} kolam berhasil ${activate ? "diaktifkan" : "dinonaktifkan"}`)
       } else {
         showNotification("Gagal mengubah status kolam", "error")
       }
+
       setSelectedPools([])
     } catch (error) {
       console.error("Error updating pool status:", error)
@@ -230,6 +298,7 @@ const Homepage = () => {
   const getSinglePool = async (code, id) => {
     try {
       console.log("Getting single pool:", { code, id })
+
       const response = await fetch(`${API_BASE}/select?code=${code}&id=${id}`, {
         method: "GET",
         headers: {
@@ -239,6 +308,7 @@ const Homepage = () => {
       })
 
       console.log("Single pool response status:", response.status)
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -274,6 +344,7 @@ const Homepage = () => {
       })
 
       console.log("Toggle status response:", response.status)
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -282,7 +353,9 @@ const Homepage = () => {
       console.log("Toggle status response data:", data)
 
       if (data.status === "200 OK") {
-        setPools(pools.map((p) => (p.id === pool.id ? { ...p, status: newStatus } : p)))
+        const updatedPools = pools.map((p) => (p.id === pool.id ? { ...p, status: newStatus } : p))
+        setPools(updatedPools)
+        savePoolsToStorage(updatedPools) // Save to localStorage
         showNotification(`${pool.name || pool.code} ${newStatus ? "diaktifkan" : "dinonaktifkan"}`)
       } else {
         throw new Error("Invalid response format")
@@ -293,13 +366,6 @@ const Homepage = () => {
     } finally {
       setApiLoading(false)
     }
-  }
-
-  const handleDeleteSelected = () => {
-    console.log("Deleting selected pools:", selectedPools)
-    setPools(pools.filter((pool) => !selectedPools.includes(pool.id)))
-    setSelectedPools([])
-    showNotification(`${selectedPools.length} kolam berhasil dihapus`)
   }
 
   const getStatusColor = (status) => {
@@ -390,6 +456,12 @@ const Homepage = () => {
                   Selamat datang, <span className="font-semibold text-white">{userSession?.username}</span>
                   <br />
                   <span className="text-sm">Kelola dan pantau status kolam budidaya Anda dengan mudah</span>
+                  <br />
+                  {getLastSyncTime() && (
+                    <span className="text-xs opacity-75">
+                      Terakhir disinkronkan: {getLastSyncTime().toLocaleString("id-ID")}
+                    </span>
+                  )}
                 </p>
               </div>
               <div className="flex items-center gap-4 animate-slideInFromRight">
@@ -428,7 +500,6 @@ const Homepage = () => {
                 </div>
               </div>
             </div>
-
             <div className="bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl p-6 text-white shadow-xl animate-fadeInUp delay-200 card-hover">
               <div className="flex items-center justify-between">
                 <div>
@@ -440,7 +511,6 @@ const Homepage = () => {
                 </div>
               </div>
             </div>
-
             <div className="bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl p-6 text-white shadow-xl animate-fadeInUp delay-300 card-hover">
               <div className="flex items-center justify-between">
                 <div>
@@ -452,7 +522,6 @@ const Homepage = () => {
                 </div>
               </div>
             </div>
-
             <div className="bg-gradient-to-br from-teal-400 to-cyan-500 rounded-2xl p-6 text-white shadow-xl animate-fadeInUp delay-400 card-hover">
               <div className="flex items-center justify-between">
                 <div>
@@ -479,41 +548,42 @@ const Homepage = () => {
                 </div>
                 <h3 className="text-2xl font-bold text-gray-800">Tambah Kolam Baru</h3>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">Nama Kolam</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Nama Kolam *</label>
                   <input
                     type="text"
                     value={newPoolName}
                     onChange={(e) => setNewPoolName(e.target.value)}
                     className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 bg-white"
                     placeholder="Masukkan nama kolam"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">Kode Kolam *</label>
-                  <input
-                    type="text"
-                    value={newPoolCode}
-                    onChange={(e) => setNewPoolCode(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 bg-white"
-                    placeholder="Masukkan kode kolam"
                     required
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Kode Kolam (Auto Generated)</label>
+                  <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-600 font-mono text-lg">
+                    {generatedCode || "Kode akan digenerate otomatis"}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Kode kolam akan digenerate otomatis untuk menghindari duplikasi
+                  </p>
+                </div>
               </div>
-
               <div className="flex gap-4 mt-8">
                 <button
                   onClick={handleAddPool}
-                  disabled={apiLoading}
-                  className="bg-gradient-to-r from-lime-400 to-green-500 hover:from-lime-500 hover:to-green-600 disabled:from-gray-300 disabled:to-gray-400 text-white px-8 py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
+                  disabled={apiLoading || !newPoolName.trim()}
+                  className="bg-gradient-to-r from-lime-400 to-green-500 hover:from-lime-500 hover:to-green-600 disabled:from-gray-300 disabled:to-gray-400 text-white px-8 py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple disabled:transform-none disabled:hover:scale-100"
                 >
                   {apiLoading ? "Menyimpan..." : "Simpan Kolam"}
                 </button>
                 <button
-                  onClick={() => setShowAddForm(false)}
+                  onClick={() => {
+                    setShowAddForm(false)
+                    setNewPoolName("")
+                    setGeneratedCode("")
+                  }}
                   className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-8 py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
                   Batal
@@ -551,13 +621,6 @@ const Homepage = () => {
                   >
                     <PowerOff size={16} />
                     Nonaktifkan
-                  </button>
-                  <button
-                    onClick={handleDeleteSelected}
-                    className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-4 py-2 rounded-xl text-sm flex items-center gap-2 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
-                  >
-                    <Trash2 size={16} />
-                    Hapus
                   </button>
                 </div>
               </div>
@@ -617,16 +680,19 @@ const Homepage = () => {
                             <h3 className="font-bold text-xl text-gray-800 mb-1">
                               {pool.name || `Kolam ${pool.code}`}
                             </h3>
-                            <p className="text-lime-600 font-semibold">{pool.code}</p>
+                            <p className="text-lime-600 font-semibold bg-lime-50 px-3 py-1 rounded-lg text-sm border border-lime-200">
+                              {pool.code}
+                            </p>
                           </div>
                         </div>
                         <span
-                          className={`px-4 py-2 rounded-xl text-sm font-bold status-badge ${getStatusColor(pool.status)}`}
+                          className={`px-4 py-2 rounded-xl text-sm font-bold status-badge ${getStatusColor(
+                            pool.status,
+                          )}`}
                         >
                           {getStatusText(pool.status)}
                         </span>
                       </div>
-
                       <div className="grid grid-cols-3 gap-3">
                         <button
                           onClick={() => handleSinglePoolToggle(pool)}
@@ -649,7 +715,6 @@ const Homepage = () => {
                             </>
                           )}
                         </button>
-
                         <button
                           onClick={() => getSinglePool(pool.code, pool.id)}
                           disabled={apiLoading}
@@ -657,7 +722,6 @@ const Homepage = () => {
                         >
                           <Eye size={16} />
                         </button>
-
                         <button
                           disabled={apiLoading}
                           className="px-4 py-3 bg-gradient-to-r from-gray-400 to-gray-500 text-white hover:from-gray-500 hover:to-gray-600 disabled:opacity-50 rounded-xl text-sm transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
