@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Link, useLocation } from "react-router-dom"
 import { Home, Cpu, Zap, Activity, Search, Menu, X, XCircle } from "lucide-react"
 
@@ -8,7 +8,16 @@ const Sidebar = () => {
   const [searchQuery, setSearchQuery] = useState("")
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isSearchFocused, setIsSearchFocused] = useState(false)
+  const [userSession, setUserSession] = useState(null)
   const location = useLocation()
+
+  // Get user session
+  useEffect(() => {
+    const session = window.userSession
+    if (session) {
+      setUserSession(session)
+    }
+  }, [])
 
   const menuItems = [
     {
@@ -259,7 +268,9 @@ const Sidebar = () => {
             </div>
             <div>
               <p className="text-white text-sm font-medium">Status: Online</p>
-              <p className="text-green-100 text-xs">User <span className="font-medium">{userSession.username}</span> </p>
+              <p className="text-green-100 text-xs">
+                User <span className="font-medium">{userSession?.username || "Guest"}</span>
+              </p>
             </div>
           </div>
         </div>

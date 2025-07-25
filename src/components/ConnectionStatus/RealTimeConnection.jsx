@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { HardwareAPIConnection } from "../utils/api-connection"
+import { HardwareAPIConnection } from "../../utils/apiConnection.js";
 
 const RealTimeConnection = ({ poolCode, userId, token, onDataReceived, onConnectionChange }) => {
   const [connectionStatus, setConnectionStatus] = useState("disconnected")
