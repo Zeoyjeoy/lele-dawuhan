@@ -252,7 +252,7 @@ function Dashboard() {
         <div className="hidden lg:flex lg:w-1/2 items-center justify-center animate-fadeInLeft">
           <div className="relative">
             <img
-              src="/assets/fishing with net-bro.svg"
+              src="/assets/Computer login-bro.svg"
               alt={isLogin ? "Login Illustration" : "Register Illustration"}
               className="w-96 h-96 object-contain animate-bounce"
             />
