@@ -1,63 +1,19 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {
-  ArrowLeft,
-  RefreshCw,
-  Cpu,
-  Zap,
-  Database,
-  CheckCircle,
-  AlertCircle,
-  Wifi,
-  WifiOff,
-  Battery,
-  Sun,
-  Droplets,
-  Power,
-  Info,
-  User,
-  Key,
-  Globe,
-  Code,
-  Monitor,
-  Activity,
-} from "lucide-react"
+import { ArrowLeft, RefreshCw, Cpu, Zap, CheckCircle, AlertCircle, Wifi, WifiOff, Power, Info, User, Key, Globe, Code } from 'lucide-react'
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../Sidebar/Sidebar"
-import "./MicroController.css"
 
 const MicroController = () => {
   const [pools, setPools] = useState([])
   const [selectedPool, setSelectedPool] = useState("")
   const [userSession, setUserSession] = useState(null)
   const [sidebarVisible, setSidebarVisible] = useState(true)
-  const [activeTab, setActiveTab] = useState("guide") // guide, sensor, relay
+  const [activeTab, setActiveTab] = useState("guide") // guide, relay
   const [loading, setLoading] = useState(false)
   const [notification, setNotification] = useState(null)
   const [connectionStatus, setConnectionStatus] = useState("disconnected")
-  const [autoRefresh, setAutoRefresh] = useState(false)
-  const [refreshInterval, setRefreshInterval] = useState(null)
-
-  // Sensor Data State
-  const [sensorData, setSensorData] = useState({
-    timestamp: "",
-    pvVoltage: "",
-    pvCurrent: "",
-    pvPower: "",
-    battVoltage: "",
-    battChCurrent: "",
-    battChPower: "",
-    battDischCurrent: "",
-    battTemp: "",
-    battPercentage: "",
-    loadCurrent: "",
-    loadPower: "",
-    envTemp: "",
-    phBioflok: "",
-    tempBioflok: "",
-    doBioflok: "",
-  })
 
   // Relay Data State
   const [relayData, setRelayData] = useState(null)
@@ -66,7 +22,6 @@ const MicroController = () => {
   const navigate = useNavigate()
 
   // API Base URLs
-  const MICRO_SENSOR_API = "http://43.165.198.49:8089/api/monitoring/micro/sensors"
   const MICRO_RELAY_API = "http://43.165.198.49:8089/api/control/micro/getByCode"
   const POOL_API_BASE = "http://43.165.198.49:8089/api/kolam"
 
@@ -116,64 +71,6 @@ const MicroController = () => {
     }
   }
 
-  // Fetch sensor data from microcontroller
-  const fetchSensorData = async () => {
-    if (!selectedPool) {
-      showNotification("Pilih kolam terlebih dahulu", "error")
-      return
-    }
-
-    if (!userSession?.id || !userSession?.token) {
-      showNotification("Session tidak valid", "error")
-      return
-    }
-
-    try {
-      setLoading(true)
-      setConnectionStatus("connecting")
-
-      // This would be a GET request to fetch latest sensor data
-      const url = `${MICRO_SENSOR_API}?code=${selectedPool}&iduser=${userSession.id}`
-      console.log("Fetching sensor data from:", url)
-
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userSession.token}`,
-        },
-      })
-
-      console.log("Sensor response status:", response.status)
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      console.log("Sensor response data:", data)
-
-      if (data.status === "200 OK" && data.payload) {
-        setSensorData(data.payload)
-        showNotification("✅ Data sensor berhasil dimuat!")
-        setConnectionStatus("connected")
-
-        // Auto disconnect after 3 seconds
-        setTimeout(() => {
-          setConnectionStatus("disconnected")
-        }, 3000)
-      } else {
-        throw new Error(data.message || "Tidak ada data sensor")
-      }
-    } catch (error) {
-      console.error("Error fetching sensor data:", error)
-      showNotification("❌ Gagal memuat data sensor: " + error.message, "error")
-      setConnectionStatus("disconnected")
-    } finally {
-      setLoading(false)
-    }
-  }
-
   // Get relay status from microcontroller
   const getRelayStatus = async () => {
     if (!selectedPool) {
@@ -216,7 +113,7 @@ const MicroController = () => {
         setRelayData(data.payload)
         showNotification(`✅ Relay ${data.payload.code} ditemukan! Status: ${data.payload.val ? "ON" : "OFF"}`)
         setConnectionStatus("connected")
-
+        
         // Auto disconnect after 3 seconds
         setTimeout(() => {
           setConnectionStatus("disconnected")
@@ -233,26 +130,6 @@ const MicroController = () => {
       setRelayLoading(false)
     }
   }
-
-  // Auto refresh functionality
-  useEffect(() => {
-    if (autoRefresh && activeTab === "sensor") {
-      const interval = setInterval(() => {
-        fetchSensorData()
-      }, 60000)//jadi 1 menit
-
-      setRefreshInterval(interval)
-
-      return () => {
-        if (interval) clearInterval(interval)
-      }
-    } else {
-      if (refreshInterval) {
-        clearInterval(refreshInterval)
-        setRefreshInterval(null)
-      }
-    }
-  }, [autoRefresh, activeTab, selectedPool])
 
   // Fetch data when userSession is available
   useEffect(() => {
@@ -346,7 +223,7 @@ const MicroController = () => {
                     <Cpu size={36} />
                     MicroController ESP32
                   </h1>
-                  <p className="text-lime-100 text-lg">Panduan koneksi dan monitoring data sensor IoT</p>
+                  <p className="text-lime-100 text-lg">Panduan koneksi dan status relay IoT</p>
                 </div>
               </div>
               <div className="flex items-center gap-4 animate-slideInFromRight">
@@ -422,7 +299,7 @@ const MicroController = () => {
           </div>
         )}
 
-        {/* Tab Navigation */}
+        {/* Tab Navigation - Only 2 tabs now */}
         <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
           <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-2 mb-6">
             <nav className="flex space-x-2">
@@ -436,17 +313,6 @@ const MicroController = () => {
               >
                 <Info size={20} />
                 Panduan Koneksi
-              </button>
-              <button
-                onClick={() => setActiveTab("sensor")}
-                className={`flex-1 py-4 px-6 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-3 ${
-                  activeTab === "sensor"
-                    ? "bg-gradient-to-r from-lime-400 to-green-500 text-white shadow-lg transform scale-105"
-                    : "text-gray-600 hover:bg-lime-50 hover:text-lime-700"
-                }`}
-              >
-                <Database size={20} />
-                Monitor Data Sensor
               </button>
               <button
                 onClick={() => setActiveTab("relay")}
@@ -477,12 +343,12 @@ const MicroController = () => {
                     <p className="text-gray-600 mt-1">Panduan lengkap menghubungkan ESP32 ke sistem monitoring</p>
                   </div>
                 </div>
-
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {/* Connection Guide Image */}
                   <div className="bg-gradient-to-br from-teal-100 to-cyan-100 rounded-2xl p-6 border-2 border-teal-200">
                     <h4 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                      <Info size={24} className="text-teal-600" />📘 Cara Menggunakan API
+                      <Info size={24} className="text-teal-600" />
+                      📘 Cara Menggunakan API
                     </h4>
                     <img
                       src="/assets/Computer troubleshooting-bro.svg"
@@ -527,7 +393,9 @@ const MicroController = () => {
                       <div className="space-y-3 text-sm">
                         <div className="bg-white p-3 rounded-lg border border-blue-200">
                           <p className="text-gray-600 font-semibold">API Endpoint:</p>
-                          <code className="text-blue-600 text-xs break-all">{MICRO_SENSOR_API}</code>
+                          <code className="text-blue-600 text-xs break-all">
+                            http://43.165.198.49:8089/api/monitoring/micro/sensors
+                          </code>
                         </div>
                         <div className="bg-white p-3 rounded-lg border border-blue-200">
                           <p className="text-gray-600 font-semibold">Method:</p>
@@ -539,7 +407,6 @@ const MicroController = () => {
                         </div>
                       </div>
                     </div>
-
                     <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border-2 border-green-200">
                       <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                         <Key size={20} className="text-green-600" />
@@ -560,10 +427,9 @@ const MicroController = () => {
                         </div>
                       </div>
                     </div>
-
                     <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-6 border-2 border-yellow-200">
                       <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <Monitor size={20} className="text-yellow-600" />
+                        <Globe size={20} className="text-yellow-600" />
                         Contoh JSON Payload
                       </h4>
                       <pre className="bg-gray-800 text-green-400 p-4 rounded-lg text-xs overflow-x-auto">
@@ -583,139 +449,6 @@ const MicroController = () => {
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* Sensor Monitoring Tab */}
-          {activeTab === "sensor" && (
-            <div className="space-y-8 tab-content">
-              <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 card-hover animate-fadeInUp">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-4">
-                    <div className="bg-gradient-to-r from-lime-400 to-green-500 p-4 rounded-xl">
-                      <Activity size={28} className="text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-gray-800">Monitor Data Sensor Real-time 🖥️</h3>
-                      <p className="text-gray-600 mt-1">Pantau data sensor dari microcontroller ESP32</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <label className="flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-xl border border-blue-200">
-                      <input
-                        type="checkbox"
-                        checked={autoRefresh}
-                        onChange={(e) => setAutoRefresh(e.target.checked)}
-                        className="rounded"
-                      />
-                      <span className="text-sm font-semibold text-blue-700">Auto Refresh (1m)</span>
-                    </label>
-                    <button
-                      onClick={fetchSensorData}
-                      disabled={loading || !selectedPool}
-                      className="px-8 py-3 bg-gradient-to-r from-lime-400 to-green-500 hover:from-lime-500 hover:to-green-600 disabled:from-gray-300 disabled:to-gray-400 text-white rounded-xl flex items-center gap-3 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
-                    >
-                      <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
-                      {loading ? "Memuat..." : "Refresh Data"}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Sensor Data Display */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  {/* Solar Panel Section */}
-                  <div className="space-y-4 form-section p-6 rounded-xl border-2 border-lime-100 animate-fadeInUp delay-100">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="bg-gradient-to-r from-yellow-400 to-orange-500 p-3 rounded-lg">
-                        <Sun size={24} className="text-white" />
-                      </div>
-                      <h4 className="text-xl font-bold text-gray-800">Panel Surya</h4>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                        <div className="text-sm text-gray-600 font-semibold mb-1">PV Voltage</div>
-                        <div className="text-2xl font-bold text-gray-800">{sensorData.pvVoltage || "--"} V</div>
-                      </div>
-                      <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                        <div className="text-sm text-gray-600 font-semibold mb-1">PV Current</div>
-                        <div className="text-2xl font-bold text-gray-800">{sensorData.pvCurrent || "--"} A</div>
-                      </div>
-                      <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                        <div className="text-sm text-gray-600 font-semibold mb-1">PV Power</div>
-                        <div className="text-2xl font-bold text-gray-800">{sensorData.pvPower || "--"} W</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Battery Section */}
-                  <div className="space-y-4 form-section p-6 rounded-xl border-2 border-lime-100 animate-fadeInUp delay-200">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="bg-gradient-to-r from-green-400 to-emerald-500 p-3 rounded-lg">
-                        <Battery size={24} className="text-white" />
-                      </div>
-                      <h4 className="text-xl font-bold text-gray-800">Baterai</h4>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                        <div className="text-sm text-gray-600 font-semibold mb-1">Battery Voltage</div>
-                        <div className="text-2xl font-bold text-gray-800">{sensorData.battVoltage || "--"} V</div>
-                      </div>
-                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                        <div className="text-sm text-gray-600 font-semibold mb-1">Charge Current</div>
-                        <div className="text-2xl font-bold text-gray-800">{sensorData.battChCurrent || "--"} A</div>
-                      </div>
-                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                        <div className="text-sm text-gray-600 font-semibold mb-1">Battery Temp</div>
-                        <div className="text-2xl font-bold text-gray-800">{sensorData.battTemp || "--"} °C</div>
-                      </div>
-                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                        <div className="text-sm text-gray-600 font-semibold mb-1">Battery Level</div>
-                        <div className="text-2xl font-bold text-gray-800">{sensorData.battPercentage || "--"} %</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Environment & Bioflok Section */}
-                  <div className="space-y-4 form-section p-6 rounded-xl border-2 border-lime-100 animate-fadeInUp delay-300">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="bg-gradient-to-r from-blue-400 to-cyan-500 p-3 rounded-lg">
-                        <Droplets size={24} className="text-white" />
-                      </div>
-                      <h4 className="text-xl font-bold text-gray-800">Lingkungan & Bioflok</h4>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                        <div className="text-sm text-gray-600 font-semibold mb-1">Env Temperature</div>
-                        <div className="text-2xl font-bold text-gray-800">{sensorData.envTemp || "--"} °C</div>
-                      </div>
-                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                        <div className="text-sm text-gray-600 font-semibold mb-1">pH Bioflok</div>
-                        <div className="text-2xl font-bold text-gray-800">{sensorData.phBioflok || "--"}</div>
-                      </div>
-                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                        <div className="text-sm text-gray-600 font-semibold mb-1">Temp Bioflok</div>
-                        <div className="text-2xl font-bold text-gray-800">{sensorData.tempBioflok || "--"} °C</div>
-                      </div>
-                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                        <div className="text-sm text-gray-600 font-semibold mb-1">DO Bioflok</div>
-                        <div className="text-2xl font-bold text-gray-800">{sensorData.doBioflok || "--"} mg/L</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Timestamp Info */}
-                {sensorData.timestamp && (
-                  <div className="mt-8 pt-6 border-t-2 border-lime-100">
-                    <div className="bg-gray-50 p-4 rounded-xl">
-                      <div className="text-sm text-gray-600 font-semibold mb-1">Terakhir Diperbarui:</div>
-                      <div className="text-lg font-bold text-gray-800">
-                        {new Date(sensorData.timestamp).toLocaleString("id-ID")}
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           )}

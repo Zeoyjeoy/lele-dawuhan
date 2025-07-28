@@ -4,6 +4,7 @@ import Homepage from './components/Homepage/Homepage';
 import Relay from './components/Relay/Relay';
 import Sensor from './components/Sensor/Sensor';
 import MicroController from './components/MicroController/MicroController';
+import Feeder from './components/Feeder/Feeder';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/relay" element={<Relay />} />
         <Route path="/sensor" element={<Sensor />} />
         <Route path="/microcontroller" element={<MicroController />} />
+        <Route path="/feeder" element={<Feeder />} />
       </Routes>
     </Router>
   );

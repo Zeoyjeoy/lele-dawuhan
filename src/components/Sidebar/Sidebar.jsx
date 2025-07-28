@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { Home, Cpu, Zap, Activity, Search, Menu, X, XCircle } from 'lucide-react'
+import { Home, Cpu, Zap, Activity, Search, Menu, X, XCircle, Hamburger } from 'lucide-react'
 import "./Sidebar.css"
 
 // Animated Stars Component
@@ -88,6 +88,13 @@ const Sidebar = () => {
       link: "/sensor",
       icon: Activity,
       description: "Monitoring sensor",
+    },
+    // Menambahkan menu Feeder
+    {
+      name: "Feeder Scheduler",
+      link: "/feeder",
+      icon: Hamburger,
+      description: "Kontrol Feeder IoT", 
     },
   ]
 

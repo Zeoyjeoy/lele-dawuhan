@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   ArrowLeft,
   RefreshCw,
@@ -13,13 +13,18 @@ import {
   Power,
   BarChart3,
   Eye,
+  Download,
+  Calendar,
+  ImageIcon,
+  FileText,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import html2canvas from "html2canvas"
 import Sidebar from "../Sidebar/Sidebar"
 import "./Sensor.css"
 
 // Enhanced Chart Component with detailed data display
-const SimpleLineChart = ({ data, dataKey, color, title, unit = "" }) => {
+const SimpleLineChart = ({ data, dataKey, color, title, unit = "", chartRef }) => {
   const [hoveredPoint, setHoveredPoint] = useState(null)
   const [showTable, setShowTable] = useState(false)
 
@@ -44,7 +49,7 @@ const SimpleLineChart = ({ data, dataKey, color, title, unit = "" }) => {
   }
 
   return (
-    <div className="w-full chart-container p-4">
+    <div className="w-full chart-container p-4" ref={chartRef}>
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-sm font-semibold text-gray-800">{title}</h4>
         <button
@@ -310,9 +315,56 @@ const ComprehensiveDataTable = ({ data }) => {
   )
 }
 
+// Date Range Picker Component
+const DateRangePicker = ({ startDate, endDate, onStartDateChange, onEndDateChange, onApply, onReset }) => {
+  return (
+    <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-6 mb-6 animate-fadeInUp">
+      <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <Calendar size={20} />
+        Filter Tanggal
+      </h3>
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-col">
+          <label className="text-sm font-medium text-gray-600 mb-1">Tanggal Mulai</label>
+          <input
+            type="datetime-local"
+            value={startDate}
+            onChange={(e) => onStartDateChange(e.target.value)}
+            className="px-3 py-2 border-2 border-lime-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-lime-400 text-sm"
+          />
+        </div>
+        <div className="flex flex-col">
+          <label className="text-sm font-medium text-gray-600 mb-1">Tanggal Akhir</label>
+          <input
+            type="datetime-local"
+            value={endDate}
+            onChange={(e) => onEndDateChange(e.target.value)}
+            className="px-3 py-2 border-2 border-lime-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-lime-400 text-sm"
+          />
+        </div>
+        <div className="flex gap-2 mt-6">
+          <button
+            onClick={onApply}
+            className="px-4 py-2 bg-gradient-to-r from-lime-400 to-green-500 hover:from-lime-500 hover:to-green-600 text-white rounded-lg text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+          >
+            Terapkan Filter
+          </button>
+          <button
+            onClick={onReset}
+            className="px-4 py-2 border-2 border-lime-200 hover:bg-lime-50 text-gray-700 rounded-lg text-sm font-semibold transition-colors"
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const Sensor = () => {
   const [latestData, setLatestData] = useState(null)
   const [historicalData, setHistoricalData] = useState([])
+  const [filteredData, setFilteredData] = useState([])
   const [pools, setPools] = useState([])
   const [selectedPool, setSelectedPool] = useState("")
   const [loading, setLoading] = useState(true)
@@ -321,6 +373,15 @@ const Sensor = () => {
   const [sidebarVisible, setSidebarVisible] = useState(true)
   const [activeTab, setActiveTab] = useState("realtime")
   const [showAllDetails, setShowAllDetails] = useState(false)
+
+  // Date filtering states
+  const [startDate, setStartDate] = useState("")
+  const [endDate, setEndDate] = useState("")
+  const [dateFilterActive, setDateFilterActive] = useState(false)
+
+  // Chart refs for image download
+  const chartRefs = useRef({})
+
   const navigate = useNavigate()
 
   // API Base URLs
@@ -342,7 +403,6 @@ const Sensor = () => {
   // Fetch available pools
   const fetchPools = async () => {
     if (!userSession?.id || !userSession?.token) return
-
     try {
       const response = await fetch(`${POOL_API_BASE}/select/all?id=${userSession.id}`, {
         method: "GET",
@@ -351,9 +411,7 @@ const Sensor = () => {
           Authorization: `Bearer ${userSession.token}`,
         },
       })
-
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-
       const data = await response.json()
       if (data.status === "200 OK" && data.payload) {
         setPools(data.payload)
@@ -369,7 +427,6 @@ const Sensor = () => {
   // Fetch latest sensor data
   const fetchLatestSensorData = async (poolCode) => {
     if (!userSession?.id || !userSession?.token || !poolCode) return
-
     try {
       setRefreshing(true)
       const response = await fetch(`${SENSOR_API_BASE}/latest?code=${poolCode}&id=${userSession.id}`, {
@@ -379,12 +436,9 @@ const Sensor = () => {
           Authorization: `Bearer ${userSession.token}`,
         },
       })
-
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-
       const data = await response.json()
       console.log("Latest sensor data:", data)
-
       if (data.status === "200 OK" && data.payload && data.payload.length > 0) {
         setLatestData(data.payload[0])
       } else {
@@ -402,7 +456,6 @@ const Sensor = () => {
   // Fetch historical sensor data
   const fetchHistoricalSensorData = async (poolCode) => {
     if (!userSession?.id || !userSession?.token || !poolCode) return
-
     try {
       setLoading(true)
       const response = await fetch(`${SENSOR_API_BASE}?code=${poolCode}&id=${userSession.id}`, {
@@ -412,12 +465,9 @@ const Sensor = () => {
           Authorization: `Bearer ${userSession.token}`,
         },
       })
-
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-
       const data = await response.json()
       console.log("Historical sensor data:", data)
-
       if (data.status === "200 OK" && data.payload) {
         const processedData = data.payload.map((item) => ({
           ...item,
@@ -428,16 +478,148 @@ const Sensor = () => {
           date: new Date(item.timestamp).toLocaleDateString("id-ID"),
         }))
         setHistoricalData(processedData.reverse())
+        setFilteredData(processedData.reverse())
       } else {
         console.log("No historical data found")
         setHistoricalData([])
+        setFilteredData([])
       }
     } catch (error) {
       console.error("Error fetching historical sensor data:", error)
       setHistoricalData([])
+      setFilteredData([])
     } finally {
       setLoading(false)
     }
+  }
+
+  // Filter data by date range
+  const applyDateFilter = () => {
+    if (!startDate || !endDate) {
+      alert("Mohon pilih tanggal mulai dan tanggal akhir")
+      return
+    }
+
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+
+    if (start > end) {
+      alert("Tanggal mulai tidak boleh lebih besar dari tanggal akhir")
+      return
+    }
+
+    const filtered = historicalData.filter((item) => {
+      const itemDate = new Date(item.timestamp)
+      return itemDate >= start && itemDate <= end
+    })
+
+    setFilteredData(filtered)
+    setDateFilterActive(true)
+  }
+
+  // Reset date filter
+  const resetDateFilter = () => {
+    setStartDate("")
+    setEndDate("")
+    setFilteredData(historicalData)
+    setDateFilterActive(false)
+  }
+
+  // Download CSV function
+  const downloadCSV = () => {
+    const dataToDownload = dateFilterActive ? filteredData : historicalData
+
+    if (dataToDownload.length === 0) {
+      alert("Tidak ada data untuk diunduh")
+      return
+    }
+
+    const headers = [
+      "Timestamp",
+      "PV Voltage (V)",
+      "PV Current (A)",
+      "PV Power (W)",
+      "Battery Voltage (V)",
+      "Battery Charge Current (A)",
+      "Battery Discharge Current (A)",
+      "Battery Temperature (°C)",
+      "Battery Percentage (%)",
+      "Load Current (A)",
+      "Load Power (W)",
+      "Environment Temperature (°C)",
+      "pH Bioflok",
+      "Water Temperature (°C)",
+      "Dissolved Oxygen (mg/L)",
+    ]
+
+    const csvContent = [
+      headers.join(","),
+      ...dataToDownload.map((item) =>
+        [
+          new Date(item.timestamp).toLocaleString("id-ID"),
+          item.pvVoltage || 0,
+          item.pvCurrent || 0,
+          item.pvPower || 0,
+          item.battVoltage || 0,
+          item.battChCurrent || 0,
+          item.battDischCurrent || 0,
+          item.battTemp || 0,
+          item.battPercentage || 0,
+          item.loadCurrent || 0,
+          item.loadPower || 0,
+          item.envTemp || 0,
+          item.phBioflok || 0,
+          item.tempBioflok || 0,
+          item.doBioflok || 0,
+        ].join(","),
+      ),
+    ].join("\n")
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const link = document.createElement("a")
+    const url = URL.createObjectURL(blob)
+    link.setAttribute("href", url)
+    link.setAttribute("download", `sensor-data-${selectedPool}-${new Date().toISOString().split("T")[0]}.csv`)
+    link.style.visibility = "hidden"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  // Download chart image function
+  const downloadChartImage = async (chartType, period = "1day") => {
+    const chartElement = document.querySelector(`[data-chart-type="${chartType}"]`)
+    if (!chartElement) {
+      alert("Chart tidak ditemukan")
+      return
+    }
+
+    try {
+      const canvas = await html2canvas(chartElement, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+        logging: false,
+        useCORS: true,
+      })
+
+      const link = document.createElement("a")
+      link.download = `${chartType}-chart-${selectedPool}-${period}-${new Date().toISOString().split("T")[0]}.png`
+      link.href = canvas.toDataURL()
+      link.click()
+    } catch (error) {
+      console.error("Error downloading chart:", error)
+      alert("Gagal mengunduh gambar chart")
+    }
+  }
+
+  // Quick date filter functions
+  const setQuickDateFilter = (days) => {
+    const end = new Date()
+    const start = new Date()
+    start.setDate(start.getDate() - days)
+
+    setStartDate(start.toISOString().slice(0, 16))
+    setEndDate(end.toISOString().slice(0, 16))
   }
 
   // Fetch data when userSession is available
@@ -455,12 +637,12 @@ const Sensor = () => {
     }
   }, [selectedPool, userSession])
 
-  //  latest data every 1 minutes
+  // Update latest data every 1 hour (changed from 1 minute)
   useEffect(() => {
     if (selectedPool && activeTab === "realtime") {
       const interval = setInterval(() => {
         fetchLatestSensorData(selectedPool)
-      }, 60000) // Refresh every 1 minutes
+      }, 3600000) // Refresh every 1 hour (3600000 ms)
       return () => clearInterval(interval)
     }
   }, [selectedPool, activeTab, userSession])
@@ -552,10 +734,11 @@ const Sensor = () => {
                     <Activity size={36} />
                     Monitoring Sensor
                   </h1>
-                  <p className="text-lime-100 text-lg">Pantau data sensor kolam budidaya secara real-time</p>
+                  <p className="text-lime-100 text-lg">
+                    Pantau data sensor kolam budidaya secara real-time (Update per jam)
+                  </p>
                 </div>
               </div>
-
               <div className="flex items-center gap-4 animate-slideInFromRight">
                 <select
                   value={selectedPool}
@@ -843,9 +1026,63 @@ const Sensor = () => {
                 </div>
               ) : (
                 <div className="space-y-8">
+                  {/* Date Range Picker */}
+                  <DateRangePicker
+                    startDate={startDate}
+                    endDate={endDate}
+                    onStartDateChange={setStartDate}
+                    onEndDateChange={setEndDate}
+                    onApply={applyDateFilter}
+                    onReset={resetDateFilter}
+                  />
+
+                  {/* Quick Date Filters */}
+                  <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-6 animate-fadeInUp">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">Filter Cepat</h3>
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        onClick={() => setQuickDateFilter(1)}
+                        className="px-4 py-2 bg-lime-100 hover:bg-lime-200 text-lime-700 rounded-lg text-sm font-semibold transition-colors"
+                      >
+                        1 Hari Terakhir
+                      </button>
+                      <button
+                        onClick={() => setQuickDateFilter(7)}
+                        className="px-4 py-2 bg-lime-100 hover:bg-lime-200 text-lime-700 rounded-lg text-sm font-semibold transition-colors"
+                      >
+                        1 Minggu Terakhir
+                      </button>
+                      <button
+                        onClick={() => setQuickDateFilter(30)}
+                        className="px-4 py-2 bg-lime-100 hover:bg-lime-200 text-lime-700 rounded-lg text-sm font-semibold transition-colors"
+                      >
+                        1 Bulan Terakhir
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Download Controls */}
+                  <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-6 animate-fadeInUp">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                      <Download size={20} />
+                      Unduh Data
+                    </h3>
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        onClick={downloadCSV}
+                        className="px-4 py-2 bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white rounded-lg text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+                      >
+                        <FileText size={16} />
+                        Unduh CSV {dateFilterActive ? "(Filtered)" : "(All Data)"}
+                      </button> 
+                    </div>
+                  </div>
+
                   {/* View Toggle */}
                   <div className="flex items-center justify-between animate-fadeInUp">
-                    <h2 className="text-2xl font-bold text-gray-800 gradient-text">Data Historis - {selectedPool}</h2>
+                    <h2 className="text-2xl font-bold text-gray-800 gradient-text">
+                      Data Historis - {selectedPool} {dateFilterActive && "(Filtered)"}
+                    </h2>
                     <button
                       onClick={() => setShowAllDetails(!showAllDetails)}
                       className="px-6 py-3 bg-gradient-to-r from-lime-400 to-green-500 hover:from-lime-500 hover:to-green-600 text-white rounded-xl text-sm transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple flex items-center gap-2"
@@ -856,29 +1093,32 @@ const Sensor = () => {
                   </div>
 
                   {showAllDetails ? (
-                    <ComprehensiveDataTable data={historicalData} />
+                    <ComprehensiveDataTable data={filteredData} />
                   ) : (
                     <>
                       {/* Power Chart */}
-                      <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 animate-fadeInUp delay-100">
+                      <div
+                        className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 animate-fadeInUp delay-100"
+                        data-chart-type="power"
+                      >
                         <h3 className="text-2xl font-bold text-gray-800 mb-6 gradient-text">Grafik Daya (Power)</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                           <SimpleLineChart
-                            data={historicalData}
+                            data={filteredData}
                             dataKey="pvPower"
                             color="#f59e0b"
                             title="Panel Surya"
                             unit="W"
                           />
                           <SimpleLineChart
-                            data={historicalData}
+                            data={filteredData}
                             dataKey="battChPower"
                             color="#3b82f6"
                             title="Charge Baterai"
                             unit="W"
                           />
                           <SimpleLineChart
-                            data={historicalData}
+                            data={filteredData}
                             dataKey="loadPower"
                             color="#8b5cf6"
                             title="Beban"
@@ -888,27 +1128,30 @@ const Sensor = () => {
                       </div>
 
                       {/* Temperature Charts */}
-                      <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 animate-fadeInUp delay-200">
+                      <div
+                        className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 animate-fadeInUp delay-200"
+                        data-chart-type="temperature"
+                      >
                         <h3 className="text-2xl font-bold text-gray-800 mb-6 gradient-text">
                           Grafik Suhu (Temperature)
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                           <SimpleLineChart
-                            data={historicalData}
+                            data={filteredData}
                             dataKey="envTemp"
                             color="#f97316"
                             title="Suhu Lingkungan"
                             unit="°C"
                           />
                           <SimpleLineChart
-                            data={historicalData}
+                            data={filteredData}
                             dataKey="tempBioflok"
                             color="#06b6d4"
                             title="Suhu Air Bioflok"
                             unit="°C"
                           />
                           <SimpleLineChart
-                            data={historicalData}
+                            data={filteredData}
                             dataKey="battTemp"
                             color="#8b5cf6"
                             title="Suhu Baterai"
@@ -918,18 +1161,21 @@ const Sensor = () => {
                       </div>
 
                       {/* Water Quality Charts */}
-                      <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 animate-fadeInUp delay-300">
+                      <div
+                        className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 animate-fadeInUp delay-300"
+                        data-chart-type="water-quality"
+                      >
                         <h3 className="text-2xl font-bold text-gray-800 mb-6 gradient-text">Kualitas Air Bioflok</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <SimpleLineChart
-                            data={historicalData}
+                            data={filteredData}
                             dataKey="phBioflok"
                             color="#10b981"
                             title="pH Bioflok"
                             unit=""
                           />
                           <SimpleLineChart
-                            data={historicalData}
+                            data={filteredData}
                             dataKey="doBioflok"
                             color="#3b82f6"
                             title="Dissolved Oxygen"
@@ -945,14 +1191,14 @@ const Sensor = () => {
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <SimpleLineChart
-                            data={historicalData}
+                            data={filteredData}
                             dataKey="battPercentage"
                             color="#10b981"
                             title="Persentase Baterai"
                             unit="%"
                           />
                           <SimpleLineChart
-                            data={historicalData}
+                            data={filteredData}
                             dataKey="battDischCurrent"
                             color="#ef4444"
                             title="Arus Discharge"
@@ -968,14 +1214,14 @@ const Sensor = () => {
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <SimpleLineChart
-                            data={historicalData}
+                            data={filteredData}
                             dataKey="pvVoltage"
                             color="#f59e0b"
                             title="Panel Surya"
                             unit="V"
                           />
                           <SimpleLineChart
-                            data={historicalData}
+                            data={filteredData}
                             dataKey="battVoltage"
                             color="#3b82f6"
                             title="Baterai"
@@ -989,21 +1235,21 @@ const Sensor = () => {
                         <h3 className="text-2xl font-bold text-gray-800 mb-6 gradient-text">Grafik Arus (Current)</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                           <SimpleLineChart
-                            data={historicalData}
+                            data={filteredData}
                             dataKey="pvCurrent"
                             color="#f59e0b"
                             title="Panel Surya"
                             unit="A"
                           />
                           <SimpleLineChart
-                            data={historicalData}
+                            data={filteredData}
                             dataKey="battChCurrent"
                             color="#3b82f6"
                             title="Charge Baterai"
                             unit="A"
                           />
                           <SimpleLineChart
-                            data={historicalData}
+                            data={filteredData}
                             dataKey="loadCurrent"
                             color="#8b5cf6"
                             title="Beban"
