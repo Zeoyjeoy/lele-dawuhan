@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import {
   ArrowLeft,
   RefreshCw,
-  Send,
   Cpu,
   Zap,
   Database,
@@ -16,6 +15,13 @@ import {
   Sun,
   Droplets,
   Power,
+  Info,
+  User,
+  Key,
+  Globe,
+  Code,
+  Monitor,
+  Activity,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../Sidebar/Sidebar"
@@ -26,10 +32,12 @@ const MicroController = () => {
   const [selectedPool, setSelectedPool] = useState("")
   const [userSession, setUserSession] = useState(null)
   const [sidebarVisible, setSidebarVisible] = useState(true)
-  const [activeTab, setActiveTab] = useState("sensor") // sensor or relay
+  const [activeTab, setActiveTab] = useState("guide") // guide, sensor, relay
   const [loading, setLoading] = useState(false)
   const [notification, setNotification] = useState(null)
-  const [connectionStatus, setConnectionStatus] = useState("disconnected") // connected, disconnected, connecting
+  const [connectionStatus, setConnectionStatus] = useState("disconnected")
+  const [autoRefresh, setAutoRefresh] = useState(false)
+  const [refreshInterval, setRefreshInterval] = useState(null)
 
   // Sensor Data State
   const [sensorData, setSensorData] = useState({
@@ -57,7 +65,7 @@ const MicroController = () => {
 
   const navigate = useNavigate()
 
-  // API Base URLs - CORRECTED ENDPOINTS
+  // API Base URLs
   const MICRO_SENSOR_API = "http://43.165.198.49:8089/api/monitoring/micro/sensors"
   const MICRO_RELAY_API = "http://43.165.198.49:8089/api/control/micro/getByCode"
   const POOL_API_BASE = "http://43.165.198.49:8089/api/kolam"
@@ -108,35 +116,8 @@ const MicroController = () => {
     }
   }
 
-  // Auto-generate current timestamp
-  const generateTimestamp = () => {
-    return new Date().toISOString()
-  }
-
-  // Generate sample sensor data
-  const generateSampleData = () => {
-    setSensorData({
-      timestamp: generateTimestamp(),
-      pvVoltage: (12 + Math.random() * 2).toFixed(1),
-      pvCurrent: (1 + Math.random() * 0.5).toFixed(1),
-      pvPower: (15 + Math.random() * 5).toFixed(1),
-      battVoltage: (11.5 + Math.random() * 1).toFixed(1),
-      battChCurrent: (0.8 + Math.random() * 0.4).toFixed(1),
-      battChPower: (10 + Math.random() * 3).toFixed(1),
-      battDischCurrent: (0.1 + Math.random() * 0.3).toFixed(1),
-      battTemp: (25 + Math.random() * 10).toFixed(1),
-      battPercentage: (70 + Math.random() * 25).toFixed(0),
-      loadCurrent: (0.3 + Math.random() * 0.4).toFixed(1),
-      loadPower: (4 + Math.random() * 3).toFixed(1),
-      envTemp: (26 + Math.random() * 6).toFixed(1),
-      phBioflok: (6.5 + Math.random() * 1.5).toFixed(1),
-      tempBioflok: (27 + Math.random() * 4).toFixed(1),
-      doBioflok: (5 + Math.random() * 3).toFixed(1),
-    })
-  }
-
-  // Send sensor data to server (POST) - FIXED ENDPOINT
-  const sendSensorData = async () => {
+  // Fetch sensor data from microcontroller
+  const fetchSensorData = async () => {
     if (!selectedPool) {
       showNotification("Pilih kolam terlebih dahulu", "error")
       return
@@ -151,57 +132,49 @@ const MicroController = () => {
       setLoading(true)
       setConnectionStatus("connecting")
 
-      const payload = {
-        ...sensorData,
-        code: selectedPool,
-        iduser: userSession.id.toString(),
-        timestamp: sensorData.timestamp || generateTimestamp(),
-      }
+      // This would be a GET request to fetch latest sensor data
+      const url = `${MICRO_SENSOR_API}?code=${selectedPool}&iduser=${userSession.id}`
+      console.log("Fetching sensor data from:", url)
 
-      console.log("Sending sensor data to:", MICRO_SENSOR_API)
-      console.log("Payload:", payload)
-
-      const response = await fetch(MICRO_SENSOR_API, {
-        method: "POST",
+      const response = await fetch(url, {
+        method: "GET",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${userSession.token}`,
         },
-        body: JSON.stringify(payload),
       })
 
-      console.log("Response status:", response.status)
+      console.log("Sensor response status:", response.status)
 
       if (!response.ok) {
-        const errorText = await response.text()
-        console.log("Error response:", errorText)
-        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`)
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
 
       const data = await response.json()
-      console.log("Response data:", data)
+      console.log("Sensor response data:", data)
 
-      // Check for different success response formats
-      if (data.status === "success" || data.message === "Data berhasil disimpan") {
-        showNotification("✅ Data sensor berhasil dikirim ke server!")
+      if (data.status === "200 OK" && data.payload) {
+        setSensorData(data.payload)
+        showNotification("✅ Data sensor berhasil dimuat!")
         setConnectionStatus("connected")
+
         // Auto disconnect after 3 seconds
         setTimeout(() => {
           setConnectionStatus("disconnected")
         }, 3000)
       } else {
-        throw new Error(data.message || "Gagal mengirim data")
+        throw new Error(data.message || "Tidak ada data sensor")
       }
     } catch (error) {
-      console.error("Error sending sensor data:", error)
-      showNotification("❌ Gagal mengirim data sensor: " + error.message, "error")
+      console.error("Error fetching sensor data:", error)
+      showNotification("❌ Gagal memuat data sensor: " + error.message, "error")
       setConnectionStatus("disconnected")
     } finally {
       setLoading(false)
     }
   }
 
-  // Get relay status from microcontroller (GET) - FIXED ENDPOINT
+  // Get relay status from microcontroller
   const getRelayStatus = async () => {
     if (!selectedPool) {
       showNotification("Pilih kolam terlebih dahulu", "error")
@@ -243,6 +216,7 @@ const MicroController = () => {
         setRelayData(data.payload)
         showNotification(`✅ Relay ${data.payload.code} ditemukan! Status: ${data.payload.val ? "ON" : "OFF"}`)
         setConnectionStatus("connected")
+
         // Auto disconnect after 3 seconds
         setTimeout(() => {
           setConnectionStatus("disconnected")
@@ -260,13 +234,25 @@ const MicroController = () => {
     }
   }
 
-  // Handle input changes
-  const handleSensorInputChange = (field, value) => {
-    setSensorData((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
-  }
+  // Auto refresh functionality
+  useEffect(() => {
+    if (autoRefresh && activeTab === "sensor") {
+      const interval = setInterval(() => {
+        fetchSensorData()
+      }, 60000)//jadi 1 menit
+
+      setRefreshInterval(interval)
+
+      return () => {
+        if (interval) clearInterval(interval)
+      }
+    } else {
+      if (refreshInterval) {
+        clearInterval(refreshInterval)
+        setRefreshInterval(null)
+      }
+    }
+  }, [autoRefresh, activeTab, selectedPool])
 
   // Fetch data when userSession is available
   useEffect(() => {
@@ -274,14 +260,6 @@ const MicroController = () => {
       fetchPools()
     }
   }, [userSession])
-
-  // Auto-generate timestamp when component mounts
-  useEffect(() => {
-    setSensorData((prev) => ({
-      ...prev,
-      timestamp: generateTimestamp(),
-    }))
-  }, [])
 
   const getConnectionIcon = () => {
     switch (connectionStatus) {
@@ -315,6 +293,8 @@ const MicroController = () => {
         return "bg-gradient-to-r from-gray-100 to-gray-200 border-gray-300"
     }
   }
+
+  const selectedPoolData = pools.find((pool) => pool.code === selectedPool)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-lime-50 via-green-50 to-emerald-50 flex">
@@ -364,12 +344,11 @@ const MicroController = () => {
                 <div>
                   <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg flex items-center gap-3">
                     <Cpu size={36} />
-                    MicroController
+                    MicroController ESP32
                   </h1>
-                  <p className="text-lime-100 text-lg">Kelola komunikasi dengan microcontroller IoT</p>
+                  <p className="text-lime-100 text-lg">Panduan koneksi dan monitoring data sensor IoT</p>
                 </div>
               </div>
-
               <div className="flex items-center gap-4 animate-slideInFromRight">
                 {/* Connection Status */}
                 <div
@@ -399,10 +378,65 @@ const MicroController = () => {
           </div>
         </div>
 
+        {/* User Information Card */}
+        {userSession && selectedPoolData && (
+          <div className="max-w-7xl mx-auto px-6 lg:px-8 -mt-4 relative z-10">
+            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl shadow-xl border-2 border-blue-200 p-6 mb-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="bg-blue-500 p-3 rounded-xl">
+                  <Info size={24} className="text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-800">Informasi Koneksi ESP32</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-white p-4 rounded-xl border border-blue-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <User size={16} className="text-blue-500" />
+                    <span className="text-sm font-semibold text-gray-600">Username</span>
+                  </div>
+                  <p className="font-bold text-gray-800">{userSession.username}</p>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-blue-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Key size={16} className="text-blue-500" />
+                    <span className="text-sm font-semibold text-gray-600">User ID</span>
+                  </div>
+                  <p className="font-bold text-gray-800">{userSession.id}</p>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-blue-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Code size={16} className="text-blue-500" />
+                    <span className="text-sm font-semibold text-gray-600">Kode Kolam</span>
+                  </div>
+                  <p className="font-bold text-gray-800">{selectedPool}</p>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-blue-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Globe size={16} className="text-blue-500" />
+                    <span className="text-sm font-semibold text-gray-600">API Endpoint</span>
+                  </div>
+                  <p className="font-bold text-gray-800 text-xs">...micro/sensors</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Tab Navigation */}
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 -mt-4 relative z-10">
-          <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-2">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+          <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-2 mb-6">
             <nav className="flex space-x-2">
+              <button
+                onClick={() => setActiveTab("guide")}
+                className={`flex-1 py-4 px-6 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-3 ${
+                  activeTab === "guide"
+                    ? "bg-gradient-to-r from-lime-400 to-green-500 text-white shadow-lg transform scale-105"
+                    : "text-gray-600 hover:bg-lime-50 hover:text-lime-700"
+                }`}
+              >
+                <Info size={20} />
+                Panduan Koneksi
+              </button>
               <button
                 onClick={() => setActiveTab("sensor")}
                 className={`flex-1 py-4 px-6 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-3 ${
@@ -412,7 +446,7 @@ const MicroController = () => {
                 }`}
               >
                 <Database size={20} />
-                Push Data Sensor
+                Monitor Data Sensor
               </button>
               <button
                 onClick={() => setActiveTab("relay")}
@@ -423,46 +457,172 @@ const MicroController = () => {
                 }`}
               >
                 <Zap size={20} />
-                Get Relay Status
+                Status Relay
               </button>
             </nav>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
-          {/* Sensor Data Tab */}
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 pb-8">
+          {/* Connection Guide Tab */}
+          {activeTab === "guide" && (
+            <div className="space-y-8 tab-content">
+              <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 card-hover animate-fadeInUp">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="bg-gradient-to-r from-lime-400 to-green-500 p-4 rounded-xl">
+                    <Cpu size={28} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-800">Hardware API Connection Setting 🔧</h3>
+                    <p className="text-gray-600 mt-1">Panduan lengkap menghubungkan ESP32 ke sistem monitoring</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Connection Guide Image */}
+                  <div className="bg-gradient-to-br from-teal-100 to-cyan-100 rounded-2xl p-6 border-2 border-teal-200">
+                    <h4 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                      <Info size={24} className="text-teal-600" />📘 Cara Menggunakan API
+                    </h4>
+                    <img
+                      src="/assets/Computer troubleshooting-bro.svg"
+                      alt="Hardware API Connection Guide"
+                      className="w-full rounded-xl shadow-lg mb-4"
+                    />
+                    <div className="space-y-3 text-sm">
+                      <div className="flex items-start gap-3">
+                        <span className="bg-teal-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                          1
+                        </span>
+                        <p className="text-gray-700">
+                          <strong>Pastikan perangkat keras Anda terhubung ke internet</strong>
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <span className="bg-teal-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                          2
+                        </span>
+                        <p className="text-gray-700">
+                          <strong>Gunakan endpoint sesuai kebutuhan</strong> (insert sensor / kontrol relay)
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <span className="bg-teal-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                          3
+                        </span>
+                        <p className="text-gray-700">
+                          <strong>Masukkan API key Anda sebagai otorisasi</strong>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Technical Implementation */}
+                  <div className="space-y-6">
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-200">
+                      <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <Code size={20} className="text-blue-600" />
+                        Konfigurasi ESP32
+                      </h4>
+                      <div className="space-y-3 text-sm">
+                        <div className="bg-white p-3 rounded-lg border border-blue-200">
+                          <p className="text-gray-600 font-semibold">API Endpoint:</p>
+                          <code className="text-blue-600 text-xs break-all">{MICRO_SENSOR_API}</code>
+                        </div>
+                        <div className="bg-white p-3 rounded-lg border border-blue-200">
+                          <p className="text-gray-600 font-semibold">Method:</p>
+                          <code className="text-green-600">POST</code>
+                        </div>
+                        <div className="bg-white p-3 rounded-lg border border-blue-200">
+                          <p className="text-gray-600 font-semibold">Content-Type:</p>
+                          <code className="text-purple-600">application/json</code>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border-2 border-green-200">
+                      <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <Key size={20} className="text-green-600" />
+                        Parameter Wajib
+                      </h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between items-center bg-white p-2 rounded border border-green-200">
+                          <span className="font-semibold text-gray-700">iduser:</span>
+                          <span className="text-green-600 font-mono">{userSession?.id || "USER_ID"}</span>
+                        </div>
+                        <div className="flex justify-between items-center bg-white p-2 rounded border border-green-200">
+                          <span className="font-semibold text-gray-700">code:</span>
+                          <span className="text-green-600 font-mono">{selectedPool || "POOL_CODE"}</span>
+                        </div>
+                        <div className="flex justify-between items-center bg-white p-2 rounded border border-green-200">
+                          <span className="font-semibold text-gray-700">Authorization:</span>
+                          <span className="text-green-600 font-mono">Bearer TOKEN</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-6 border-2 border-yellow-200">
+                      <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <Monitor size={20} className="text-yellow-600" />
+                        Contoh JSON Payload
+                      </h4>
+                      <pre className="bg-gray-800 text-green-400 p-4 rounded-lg text-xs overflow-x-auto">
+                        {`{
+  "iduser": "${userSession?.id || "USER_ID"}",
+  "code": "${selectedPool || "POOL_CODE"}",
+  "timestamp": "2025-07-26T12:00:00Z",
+  "pvVoltage": "12.5",
+  "pvCurrent": "1.2",
+  "battVoltage": "11.8",
+  "envTemp": "29.0",
+  "phBioflok": "7.1",
+  "tempBioflok": "28.5",
+  "doBioflok": "6.8"
+}`}
+                      </pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Sensor Monitoring Tab */}
           {activeTab === "sensor" && (
             <div className="space-y-8 tab-content">
               <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 card-hover animate-fadeInUp">
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-4">
                     <div className="bg-gradient-to-r from-lime-400 to-green-500 p-4 rounded-xl">
-                      <Send size={28} className="text-white" />
+                      <Activity size={28} className="text-white" />
                     </div>
                     <div>
-                      <h3 className="text-2xl font-bold text-gray-800">Push Data Sensor ke Server</h3>
-                      <p className="text-gray-600 mt-1">Kirim data sensor dari microcontroller ke database</p>
+                      <h3 className="text-2xl font-bold text-gray-800">Monitor Data Sensor Real-time 🖥️</h3>
+                      <p className="text-gray-600 mt-1">Pantau data sensor dari microcontroller ESP32</p>
                     </div>
                   </div>
                   <div className="flex gap-3">
+                    <label className="flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-xl border border-blue-200">
+                      <input
+                        type="checkbox"
+                        checked={autoRefresh}
+                        onChange={(e) => setAutoRefresh(e.target.checked)}
+                        className="rounded"
+                      />
+                      <span className="text-sm font-semibold text-blue-700">Auto Refresh (1m)</span>
+                    </label>
                     <button
-                      onClick={generateSampleData}
-                      className="px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-xl text-sm transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
-                    >
-                      Generate Sample
-                    </button>
-                    <button
-                      onClick={sendSensorData}
+                      onClick={fetchSensorData}
                       disabled={loading || !selectedPool}
                       className="px-8 py-3 bg-gradient-to-r from-lime-400 to-green-500 hover:from-lime-500 hover:to-green-600 disabled:from-gray-300 disabled:to-gray-400 text-white rounded-xl flex items-center gap-3 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
                     >
-                      <Send size={18} />
-                      {loading ? "Mengirim..." : "Kirim Data"}
+                      <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+                      {loading ? "Memuat..." : "Refresh Data"}
                     </button>
                   </div>
                 </div>
 
-                {/* Sensor Input Form */}
+                {/* Sensor Data Display */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   {/* Solar Panel Section */}
                   <div className="space-y-4 form-section p-6 rounded-xl border-2 border-lime-100 animate-fadeInUp delay-100">
@@ -472,41 +632,19 @@ const MicroController = () => {
                       </div>
                       <h4 className="text-xl font-bold text-gray-800">Panel Surya</h4>
                     </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">PV Voltage (V)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={sensorData.pvVoltage}
-                        onChange={(e) => handleSensorInputChange("pvVoltage", e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
-                        placeholder="12.5"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">PV Current (A)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={sensorData.pvCurrent}
-                        onChange={(e) => handleSensorInputChange("pvCurrent", e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
-                        placeholder="1.2"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">PV Power (W)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={sensorData.pvPower}
-                        onChange={(e) => handleSensorInputChange("pvPower", e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
-                        placeholder="15.0"
-                      />
+                    <div className="space-y-3">
+                      <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                        <div className="text-sm text-gray-600 font-semibold mb-1">PV Voltage</div>
+                        <div className="text-2xl font-bold text-gray-800">{sensorData.pvVoltage || "--"} V</div>
+                      </div>
+                      <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                        <div className="text-sm text-gray-600 font-semibold mb-1">PV Current</div>
+                        <div className="text-2xl font-bold text-gray-800">{sensorData.pvCurrent || "--"} A</div>
+                      </div>
+                      <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                        <div className="text-sm text-gray-600 font-semibold mb-1">PV Power</div>
+                        <div className="text-2xl font-bold text-gray-800">{sensorData.pvPower || "--"} W</div>
+                      </div>
                     </div>
                   </div>
 
@@ -518,65 +656,23 @@ const MicroController = () => {
                       </div>
                       <h4 className="text-xl font-bold text-gray-800">Baterai</h4>
                     </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Battery Voltage (V)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={sensorData.battVoltage}
-                        onChange={(e) => handleSensorInputChange("battVoltage", e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
-                        placeholder="11.8"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Charge Current (A)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={sensorData.battChCurrent}
-                        onChange={(e) => handleSensorInputChange("battChCurrent", e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
-                        placeholder="1.0"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Discharge Current (A)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={sensorData.battDischCurrent}
-                        onChange={(e) => handleSensorInputChange("battDischCurrent", e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
-                        placeholder="0.2"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Battery Temp (°C)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={sensorData.battTemp}
-                        onChange={(e) => handleSensorInputChange("battTemp", e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
-                        placeholder="30.0"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Battery Percentage (%)</label>
-                      <input
-                        type="number"
-                        step="1"
-                        value={sensorData.battPercentage}
-                        onChange={(e) => handleSensorInputChange("battPercentage", e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
-                        placeholder="85"
-                      />
+                    <div className="space-y-3">
+                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <div className="text-sm text-gray-600 font-semibold mb-1">Battery Voltage</div>
+                        <div className="text-2xl font-bold text-gray-800">{sensorData.battVoltage || "--"} V</div>
+                      </div>
+                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <div className="text-sm text-gray-600 font-semibold mb-1">Charge Current</div>
+                        <div className="text-2xl font-bold text-gray-800">{sensorData.battChCurrent || "--"} A</div>
+                      </div>
+                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <div className="text-sm text-gray-600 font-semibold mb-1">Battery Temp</div>
+                        <div className="text-2xl font-bold text-gray-800">{sensorData.battTemp || "--"} °C</div>
+                      </div>
+                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <div className="text-sm text-gray-600 font-semibold mb-1">Battery Level</div>
+                        <div className="text-2xl font-bold text-gray-800">{sensorData.battPercentage || "--"} %</div>
+                      </div>
                     </div>
                   </div>
 
@@ -588,94 +684,38 @@ const MicroController = () => {
                       </div>
                       <h4 className="text-xl font-bold text-gray-800">Lingkungan & Bioflok</h4>
                     </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Env Temperature (°C)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={sensorData.envTemp}
-                        onChange={(e) => handleSensorInputChange("envTemp", e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
-                        placeholder="29.0"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">pH Bioflok</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={sensorData.phBioflok}
-                        onChange={(e) => handleSensorInputChange("phBioflok", e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
-                        placeholder="7.1"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Temp Bioflok (°C)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={sensorData.tempBioflok}
-                        onChange={(e) => handleSensorInputChange("tempBioflok", e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
-                        placeholder="28.5"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">DO Bioflok (mg/L)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={sensorData.doBioflok}
-                        onChange={(e) => handleSensorInputChange("doBioflok", e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
-                        placeholder="6.8"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Load Current (A)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={sensorData.loadCurrent}
-                        onChange={(e) => handleSensorInputChange("loadCurrent", e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
-                        placeholder="0.5"
-                      />
+                    <div className="space-y-3">
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <div className="text-sm text-gray-600 font-semibold mb-1">Env Temperature</div>
+                        <div className="text-2xl font-bold text-gray-800">{sensorData.envTemp || "--"} °C</div>
+                      </div>
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <div className="text-sm text-gray-600 font-semibold mb-1">pH Bioflok</div>
+                        <div className="text-2xl font-bold text-gray-800">{sensorData.phBioflok || "--"}</div>
+                      </div>
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <div className="text-sm text-gray-600 font-semibold mb-1">Temp Bioflok</div>
+                        <div className="text-2xl font-bold text-gray-800">{sensorData.tempBioflok || "--"} °C</div>
+                      </div>
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <div className="text-sm text-gray-600 font-semibold mb-1">DO Bioflok</div>
+                        <div className="text-2xl font-bold text-gray-800">{sensorData.doBioflok || "--"} mg/L</div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Timestamp Section */}
-                <div className="mt-8 pt-6 border-t-2 border-lime-100">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Timestamp</label>
-                      <input
-                        type="text"
-                        value={sensorData.timestamp}
-                        onChange={(e) => handleSensorInputChange("timestamp", e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 input-focus-effect"
-                        placeholder="2025-07-11T12:00:00"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Kolam Terpilih</label>
-                      <input
-                        type="text"
-                        value={selectedPool}
-                        readOnly
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 font-semibold text-gray-600"
-                        placeholder="Pilih kolam"
-                      />
+                {/* Timestamp Info */}
+                {sensorData.timestamp && (
+                  <div className="mt-8 pt-6 border-t-2 border-lime-100">
+                    <div className="bg-gray-50 p-4 rounded-xl">
+                      <div className="text-sm text-gray-600 font-semibold mb-1">Terakhir Diperbarui:</div>
+                      <div className="text-lg font-bold text-gray-800">
+                        {new Date(sensorData.timestamp).toLocaleString("id-ID")}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           )}
@@ -690,8 +730,8 @@ const MicroController = () => {
                       <Zap size={28} className="text-white" />
                     </div>
                     <div>
-                      <h3 className="text-2xl font-bold text-gray-800">Get Relay Status dari MicroController</h3>
-                      <p className="text-gray-600 mt-1">Ambil status relay dari microcontroller</p>
+                      <h3 className="text-2xl font-bold text-gray-800">Status Relay MicroController 🔋</h3>
+                      <p className="text-gray-600 mt-1">Pantau status relay dari microcontroller ESP32</p>
                     </div>
                   </div>
                   <button
@@ -713,13 +753,11 @@ const MicroController = () => {
                       </div>
                       <h4 className="text-xl font-bold text-gray-800">Status Relay Ditemukan</h4>
                     </div>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                       <div className="bg-white p-6 rounded-xl border-2 border-lime-100 shadow-lg card-hover">
                         <div className="text-sm text-gray-600 font-semibold mb-2">Kode Relay</div>
                         <div className="text-2xl font-bold text-gray-800">{relayData.code}</div>
                       </div>
-
                       <div className="bg-white p-6 rounded-xl border-2 border-lime-100 shadow-lg card-hover">
                         <div className="text-sm text-gray-600 font-semibold mb-2">Status</div>
                         <div
@@ -731,12 +769,10 @@ const MicroController = () => {
                           {relayData.val ? "ON" : "OFF"}
                         </div>
                       </div>
-
                       <div className="bg-white p-6 rounded-xl border-2 border-lime-100 shadow-lg card-hover">
                         <div className="text-sm text-gray-600 font-semibold mb-2">User ID</div>
                         <div className="text-2xl font-bold text-gray-800">{relayData.iduser}</div>
                       </div>
-
                       <div className="bg-white p-6 rounded-xl border-2 border-lime-100 shadow-lg card-hover">
                         <div className="text-sm text-gray-600 font-semibold mb-2">Relay ID</div>
                         <div className="text-2xl font-bold text-gray-800">{relayData.id}</div>

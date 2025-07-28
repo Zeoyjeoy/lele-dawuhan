@@ -1,9 +1,7 @@
 "use client"
-
 import { useState, useEffect } from "react"
 import {
   Plus,
-  Trash2,
   Power,
   PowerOff,
   Edit3,
@@ -33,7 +31,7 @@ const Relay = () => {
   const [sidebarVisible, setSidebarVisible] = useState(true)
   const navigate = useNavigate()
 
-  // localStorage management
+  // localStorage management - FIXED: Include user ID in key
   const RELAY_STORAGE_KEY = `relays_user_${userSession?.id || "default"}`
 
   const saveRelaysToStorage = (relaysData) => {
@@ -127,7 +125,7 @@ const Relay = () => {
     }
   }
 
-  // Fetch existing relays from server
+  // FIXED: Fetch existing relays from server using the correct endpoint
   const fetchRelays = async () => {
     if (!userSession?.id || !userSession?.token) {
       console.log("No user session or token, cannot fetch relays")
@@ -136,30 +134,76 @@ const Relay = () => {
 
     try {
       setLoading(true)
-      console.log("Loading relays from localStorage...")
+      console.log("Fetching relays from server...")
 
-      // Load dari localStorage terlebih dahulu
-      const storedRelays = loadRelaysFromStorage()
-      if (storedRelays.length > 0) {
-        setRelays(storedRelays)
-        console.log("Loaded", storedRelays.length, "relays from localStorage")
+      // FIXED: Use the correct endpoint for fetching user's relays
+      const url = `${RELAY_API_BASE}/relay/all?id=${userSession.id}`
+      console.log("Fetching relays from:", url)
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userSession.token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      setLoading(false)
+      const data = await response.json()
+      console.log("Relays data received:", data)
+
+      let serverRelays = []
+      if (data.status === "200 OK" && data.payload && Array.isArray(data.payload)) {
+        // Map server data to include pool names
+        serverRelays = data.payload.map((relay) => {
+          const pool = pools.find((p) => p.code === relay.code)
+          return {
+            ...relay,
+            poolName: pool?.name || `Kolam ${relay.code}`,
+          }
+        })
+      }
+
+      // FIXED: Always use server data as source of truth for new sessions
+      console.log("Setting relays from server:", serverRelays)
+      setRelays(serverRelays)
+
+      // Save to localStorage for offline access
+      if (serverRelays.length > 0) {
+        saveRelaysToStorage(serverRelays)
+      } else {
+        // FIXED: Clear localStorage if server returns empty (new user)
+        clearRelaysFromStorage()
+      }
     } catch (error) {
-      console.error("Error fetching relays:", error)
-      setRelays([])
-      showNotification("Gagal memuat data relay: " + error.message, "error")
+      console.error("Error fetching relays from server:", error)
+
+      // FIXED: Only fallback to localStorage if server is unreachable
+      // and user has existing data
+      const storedRelays = loadRelaysFromStorage()
+      if (storedRelays.length > 0) {
+        console.log("Server unreachable, using localStorage fallback")
+        setRelays(storedRelays)
+        showNotification("Menggunakan data offline. Koneksi server bermasalah.", "error")
+      } else {
+        // FIXED: New user with no server data and no localStorage = empty state
+        setRelays([])
+        showNotification("Gagal memuat data relay: " + error.message, "error")
+      }
+    } finally {
       setLoading(false)
     }
   }
 
-  // Auto-save relays to localStorage whenever relays state changes
-  useEffect(() => {
-    if (relays.length > 0 && userSession?.id) {
-      saveRelaysToStorage(relays)
-    }
-  }, [relays, userSession?.id])
+  // FIXED: Only save to localStorage when relays are updated via user actions
+  // Remove automatic save on every relays state change
+  const saveRelaysAfterAction = (updatedRelays) => {
+    setRelays(updatedRelays)
+    saveRelaysToStorage(updatedRelays)
+  }
 
   // Fetch data when userSession is available
   useEffect(() => {
@@ -168,9 +212,10 @@ const Relay = () => {
     }
   }, [userSession])
 
-  // Fetch relays after pools are loaded
+  // FIXED: Fetch relays after pools are loaded AND user session is available
   useEffect(() => {
-    if (pools.length > 0 && userSession?.id) {
+    if (userSession?.id && pools.length >= 0) {
+      // Allow fetching even if no pools
       fetchRelays()
     }
   }, [pools, userSession])
@@ -187,7 +232,7 @@ const Relay = () => {
     setSelectedRelays((prev) => (prev.includes(relayId) ? prev.filter((id) => id !== relayId) : [...prev, relayId]))
   }
 
-  // Add new relay - IMPROVED VERSION
+  // FIXED: Add new relay with proper server sync
   const handleAddRelay = async () => {
     if (!newRelayCode.trim()) {
       showNotification("Kode kolam harus dipilih", "error")
@@ -215,7 +260,6 @@ const Relay = () => {
 
     try {
       setApiLoading(true)
-
       const requestData = {
         val: newRelayVal,
         code: newRelayCode.trim(),
@@ -253,12 +297,10 @@ const Relay = () => {
         }
 
         console.log("New relay object:", newRelay)
-
         const updatedRelays = [...relays, newRelay]
-        setRelays(updatedRelays)
 
-        // Langsung save ke localStorage
-        saveRelaysToStorage(updatedRelays)
+        // FIXED: Use the new save function
+        saveRelaysAfterAction(updatedRelays)
 
         setNewRelayCode("")
         setNewRelayVal(true)
@@ -275,13 +317,11 @@ const Relay = () => {
     }
   }
 
-  // Update relay value - MULTIPLE APPROACH VERSION
-  const updateRelayValue = async (code, val, relayId) => {
+  // FIXED: Update single relay value with proper server sync
+  const updateSingleRelayValue = async (code, val, relayId) => {
     try {
-      setApiLoading(true)
-      console.log("Updating relay value:", { code, val, relayId, userId: userSession.id })
+      console.log("Updating single relay value:", { code, val, relayId, userId: userSession.id })
 
-      // Gunakan userSession.id untuk parameter id, bukan relayId
       const response = await fetch(`${RELAY_API_BASE}/updateValByCode?code=${code}&val=${val}&id=${userSession.id}`, {
         method: "PUT",
         headers: {
@@ -300,60 +340,103 @@ const Relay = () => {
       console.log("Update relay response data:", data)
 
       if (data.status === "200 OK") {
-        const updatedRelays = relays.map((relay) => (relay.id === relayId ? { ...relay, val: val } : relay))
-        setRelays(updatedRelays)
-
-        // Save updated status ke localStorage
-        saveRelaysToStorage(updatedRelays)
-
-        showNotification(`Relay ${code} berhasil ${val ? "diaktifkan" : "dinonaktifkan"}`)
+        return { success: true, relayId, code, val }
       } else {
         throw new Error(data.message || "Gagal mengubah nilai relay")
       }
     } catch (error) {
       console.error("Error updating relay:", error)
-      showNotification("Gagal mengubah nilai relay: " + error.message, "error")
-    } finally {
-      setApiLoading(false)
+      return { success: false, relayId, code, error: error.message }
     }
   }
 
   // Handle single relay toggle
   const handleSingleRelayToggle = async (relay) => {
     const newVal = !relay.val
-    await updateRelayValue(relay.code, newVal, relay.id) // relay.id tetap digunakan untuk update state
+
+    try {
+      setApiLoading(true)
+      const result = await updateSingleRelayValue(relay.code, newVal, relay.id)
+
+      if (result.success) {
+        const updatedRelays = relays.map((r) => (r.id === relay.id ? { ...r, val: newVal } : r))
+        saveRelaysAfterAction(updatedRelays)
+        showNotification(`Relay ${relay.code} berhasil ${newVal ? "diaktifkan" : "dinonaktifkan"}`)
+      } else {
+        showNotification("Gagal mengubah nilai relay: " + result.error, "error")
+      }
+    } catch (error) {
+      console.error("Error in single relay toggle:", error)
+      showNotification("Gagal mengubah nilai relay: " + error.message, "error")
+    } finally {
+      setApiLoading(false)
+    }
   }
 
-  // Handle bulk relay operations
+  // FIXED: Handle bulk relay operations - Sequential processing
   const handleBulkRelayChange = async (activate) => {
     try {
       setApiLoading(true)
 
-      const updatePromises = selectedRelays.map(async (relayId) => {
-        const relay = relays.find((r) => r.id === relayId)
-        if (!relay) return { relayId, success: false, error: "Relay tidak ditemukan" }
+      const selectedRelayObjects = selectedRelays.map((relayId) => relays.find((r) => r.id === relayId)).filter(Boolean)
 
+      console.log(
+        "Starting bulk update for relays:",
+        selectedRelayObjects.map((r) => r.code),
+      )
+
+      let successCount = 0
+      let failureCount = 0
+      const results = []
+
+      // FIXED: Process relays sequentially to avoid race conditions
+      for (const relay of selectedRelayObjects) {
         try {
-          await updateRelayValue(relay.code, activate, relayId)
-          return { relayId, success: true }
+          // Add small delay between requests to avoid overwhelming the server
+          if (results.length > 0) {
+            await new Promise((resolve) => setTimeout(resolve, 200))
+          }
+
+          const result = await updateSingleRelayValue(relay.code, activate, relay.id)
+          results.push(result)
+
+          if (result.success) {
+            successCount++
+            console.log(`✓ Relay ${relay.code} updated successfully`)
+          } else {
+            failureCount++
+            console.log(`✗ Relay ${relay.code} failed: ${result.error}`)
+          }
         } catch (error) {
-          console.error(`Error updating relay ${relay.code}:`, error)
-          return { relayId, success: false, error: error.message }
+          failureCount++
+          console.log(`✗ Relay ${relay.code} failed: ${error.message}`)
+          results.push({ success: false, relayId: relay.id, code: relay.code, error: error.message })
         }
-      })
+      }
 
-      const results = await Promise.all(updatePromises)
-      const successCount = results.filter((r) => r && r.success).length
-      const failureCount = results.filter((r) => r && !r.success).length
-
+      // FIXED: Update all successful relays in one batch
       if (successCount > 0) {
+        const updatedRelays = relays.map((relay) => {
+          const successResult = results.find((r) => r.success && r.relayId === relay.id)
+          if (successResult) {
+            return { ...relay, val: activate }
+          }
+          return relay
+        })
+
+        saveRelaysAfterAction(updatedRelays)
+      }
+
+      // Show comprehensive notification
+      if (successCount > 0 && failureCount === 0) {
+        showNotification(`Semua ${successCount} relay berhasil ${activate ? "diaktifkan" : "dinonaktifkan"}`, "success")
+      } else if (successCount > 0 && failureCount > 0) {
         showNotification(
-          `${successCount} relay berhasil ${activate ? "diaktifkan" : "dinonaktifkan"}${
-            failureCount > 0 ? `, ${failureCount} gagal` : ""
-          }`,
+          `${successCount} relay berhasil ${activate ? "diaktifkan" : "dinonaktifkan"}, ${failureCount} gagal`,
+          "error",
         )
       } else {
-        showNotification("Semua relay gagal diubah. Periksa kembali kode relay.", "error")
+        showNotification(`Semua relay gagal diubah. Periksa koneksi dan coba lagi.`, "error")
       }
 
       setSelectedRelays([])
@@ -363,18 +446,6 @@ const Relay = () => {
     } finally {
       setApiLoading(false)
     }
-  }
-
-  const handleDeleteSelected = () => {
-    console.log("Deleting selected relays:", selectedRelays)
-    const updatedRelays = relays.filter((relay) => !selectedRelays.includes(relay.id))
-    setRelays(updatedRelays)
-
-    // Save setelah delete
-    saveRelaysToStorage(updatedRelays)
-
-    setSelectedRelays([])
-    showNotification(`${selectedRelays.length} relay berhasil dihapus`)
   }
 
   const getStatusColor = (val) => {
@@ -479,7 +550,6 @@ const Relay = () => {
                   <p className="text-lime-100 text-lg">Kelola relay untuk kolam budidaya Anda</p>
                 </div>
               </div>
-
               <div className="flex items-center gap-4 animate-slideInFromRight">
                 <button
                   onClick={() => setShowAddForm(!showAddForm)}
@@ -491,7 +561,7 @@ const Relay = () => {
                 </button>
                 <button
                   onClick={() => {
-                    // Clear relay data saat logout
+                    // FIXED: Clear relay data saat logout
                     clearRelaysFromStorage()
                     window.userSession = null
                     navigate("/")
@@ -519,7 +589,6 @@ const Relay = () => {
                 </div>
               </div>
             </div>
-
             <div className="bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl p-6 text-white shadow-xl animate-fadeInUp delay-200 card-hover">
               <div className="flex items-center justify-between">
                 <div>
@@ -531,7 +600,6 @@ const Relay = () => {
                 </div>
               </div>
             </div>
-
             <div className="bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl p-6 text-white shadow-xl animate-fadeInUp delay-300 card-hover">
               <div className="flex items-center justify-between">
                 <div>
@@ -543,7 +611,6 @@ const Relay = () => {
                 </div>
               </div>
             </div>
-
             <div className="bg-gradient-to-br from-teal-400 to-cyan-500 rounded-2xl p-6 text-white shadow-xl animate-fadeInUp delay-400 card-hover">
               <div className="flex items-center justify-between">
                 <div>
@@ -610,7 +677,6 @@ const Relay = () => {
                       </select>
                     </div>
                   </div>
-
                   <div className="flex gap-4 mt-8">
                     <button
                       onClick={handleAddRelay}
@@ -660,13 +726,6 @@ const Relay = () => {
                   >
                     <PowerOff size={16} />
                     Nonaktifkan
-                  </button>
-                  <button
-                    onClick={handleDeleteSelected}
-                    className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-4 py-2 rounded-xl text-sm flex items-center gap-2 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
-                  >
-                    <Trash2 size={16} />
-                    Hapus
                   </button>
                 </div>
               </div>
@@ -743,7 +802,6 @@ const Relay = () => {
                           {getStatusText(relay.val)}
                         </span>
                       </div>
-
                       <div className="grid grid-cols-2 gap-3">
                         <button
                           onClick={() => handleSingleRelayToggle(relay)}
@@ -766,7 +824,6 @@ const Relay = () => {
                             </>
                           )}
                         </button>
-
                         <button
                           disabled={apiLoading}
                           className="px-4 py-3 bg-gradient-to-r from-gray-400 to-gray-500 text-white hover:from-gray-500 hover:to-gray-600 disabled:opacity-50 rounded-xl text-sm transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"

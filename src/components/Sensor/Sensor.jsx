@@ -455,12 +455,12 @@ const Sensor = () => {
     }
   }, [selectedPool, userSession])
 
-  // Auto refresh latest data every 30 seconds
+  //  latest data every 1 minutes
   useEffect(() => {
     if (selectedPool && activeTab === "realtime") {
       const interval = setInterval(() => {
         fetchLatestSensorData(selectedPool)
-      }, 30000)
+      }, 60000) // Refresh every 1 minutes
       return () => clearInterval(interval)
     }
   }, [selectedPool, activeTab, userSession])

@@ -1,18 +1,7 @@
 "use client"
+
 import { useState, useEffect } from "react"
-import {
-  Plus,
-  Power,
-  PowerOff,
-  Edit3,
-  Eye,
-  AlertCircle,
-  CheckCircle,
-  Users,
-  Activity,
-  TrendingUp,
-  Droplets,
-} from "lucide-react"
+import { Plus, Power, PowerOff, AlertCircle, CheckCircle, Users, Activity, TrendingUp, Droplets } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../Sidebar/Sidebar"
 import "./Homepage.css"
@@ -33,16 +22,22 @@ const Homepage = () => {
   // API Base URL
   const API_BASE = "http://43.165.198.49:8089/api/kolam"
 
-  // localStorage keys
+  // User-specific localStorage keys
+  const getUserSpecificKey = (key) => {
+    return userSession?.id ? `${key}_user_${userSession.id}` : key
+  }
+
   const POOLS_STORAGE_KEY = "kolam_pools_data"
   const LAST_SYNC_KEY = "kolam_last_sync"
 
-  // localStorage functions
+  // localStorage functions with user-specific keys
   const savePoolsToStorage = (poolsData) => {
     try {
-      localStorage.setItem(POOLS_STORAGE_KEY, JSON.stringify(poolsData))
-      localStorage.setItem(LAST_SYNC_KEY, new Date().toISOString())
-      console.log("Pools saved to localStorage:", poolsData)
+      if (userSession?.id) {
+        localStorage.setItem(getUserSpecificKey(POOLS_STORAGE_KEY), JSON.stringify(poolsData))
+        localStorage.setItem(getUserSpecificKey(LAST_SYNC_KEY), new Date().toISOString())
+        console.log("Pools saved to localStorage for user:", userSession.id, poolsData)
+      }
     } catch (error) {
       console.error("Error saving pools to localStorage:", error)
     }
@@ -50,11 +45,13 @@ const Homepage = () => {
 
   const loadPoolsFromStorage = () => {
     try {
-      const savedPools = localStorage.getItem(POOLS_STORAGE_KEY)
-      if (savedPools) {
-        const parsedPools = JSON.parse(savedPools)
-        console.log("Pools loaded from localStorage:", parsedPools)
-        return parsedPools
+      if (userSession?.id) {
+        const savedPools = localStorage.getItem(getUserSpecificKey(POOLS_STORAGE_KEY))
+        if (savedPools) {
+          const parsedPools = JSON.parse(savedPools)
+          console.log("Pools loaded from localStorage for user:", userSession.id, parsedPools)
+          return parsedPools
+        }
       }
     } catch (error) {
       console.error("Error loading pools from localStorage:", error)
@@ -64,12 +61,14 @@ const Homepage = () => {
 
   const getLastSyncTime = () => {
     try {
-      const lastSync = localStorage.getItem(LAST_SYNC_KEY)
-      return lastSync ? new Date(lastSync) : null
+      if (userSession?.id) {
+        const lastSync = localStorage.getItem(getUserSpecificKey(LAST_SYNC_KEY))
+        return lastSync ? new Date(lastSync) : null
+      }
     } catch (error) {
       console.error("Error getting last sync time:", error)
-      return null
     }
+    return null
   }
 
   // Generate unique pool code
@@ -102,17 +101,17 @@ const Homepage = () => {
 
   // Fetch all pools
   const fetchPools = async () => {
-    // Load from localStorage first
+    if (!userSession?.id || !userSession?.token) {
+      console.log("No user session or token")
+      setLoading(false)
+      return
+    }
+
+    // Load from localStorage first (user-specific)
     const cachedPools = loadPoolsFromStorage()
     if (cachedPools.length > 0) {
       setPools(cachedPools)
-      console.log("Loaded pools from localStorage")
-    }
-
-    if (!userSession?.id || !userSession?.token) {
-      console.log("No user session or token, using cached data only")
-      setLoading(false)
-      return
+      console.log("Loaded pools from localStorage for user:", userSession.id)
     }
 
     try {
@@ -137,17 +136,25 @@ const Homepage = () => {
       const data = await response.json()
       console.log("Pools data received from API:", data)
 
-      if (data.status === "200 OK" && data.payload) {
+      if (data.status === "200 OK" && data.payload && Array.isArray(data.payload)) {
         setPools(data.payload)
         savePoolsToStorage(data.payload) // Save to localStorage
         console.log("Pools updated from API and saved to localStorage")
       } else {
-        console.log("No pools found or invalid response, keeping cached data")
+        // If no pools from API, clear localStorage and set empty array
+        setPools([])
+        savePoolsToStorage([])
+        console.log("No pools found from API, cleared localStorage")
       }
     } catch (error) {
       console.error("Error fetching pools from API:", error)
-      showNotification("Menggunakan data tersimpan. " + error.message, "error")
-      // Keep using cached data if API fails
+      // If API fails and no cached data, show empty state
+      if (cachedPools.length === 0) {
+        setPools([])
+        showNotification("Tidak dapat memuat data kolam. " + error.message, "error")
+      } else {
+        showNotification("Menggunakan data tersimpan. " + error.message, "error")
+      }
     } finally {
       setLoading(false)
     }
@@ -294,45 +301,12 @@ const Homepage = () => {
     }
   }
 
-  // Get single pool info
-  const getSinglePool = async (code, id) => {
-    try {
-      console.log("Getting single pool:", { code, id })
-
-      const response = await fetch(`${API_BASE}/select?code=${code}&id=${id}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userSession.token}`,
-        },
-      })
-
-      console.log("Single pool response status:", response.status)
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      console.log("Single pool data:", data)
-
-      if (data.status === "200 OK" && data.payload) {
-        showNotification(`Detail kolam ${code} berhasil dimuat`)
-        return data
-      } else {
-        throw new Error("Invalid response format")
-      }
-    } catch (error) {
-      console.error("Error fetching single pool:", error)
-      showNotification("Gagal memuat detail kolam: " + error.message, "error")
-    }
-  }
-
   // Handle single pool status toggle
   const handleSinglePoolToggle = async (pool) => {
     try {
       setApiLoading(true)
       const newStatus = !pool.status
+
       console.log("Toggling pool status:", { pool, newStatus })
 
       const response = await fetch(`${API_BASE}/updatestatus?code=${pool.code}&val=${newStatus}&id=${pool.id}`, {
@@ -451,7 +425,7 @@ const Homepage = () => {
           <div className="max-w-7xl mx-auto px-6 lg:px-8">
             <div className="flex justify-between items-center py-8">
               <div className="animate-slideInFromLeft">
-                <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">🐟 Monitoring Kolam Budidaya</h1>
+                <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">Monitoring Kolam Budidaya 🐟🫧</h1>
                 <p className="text-lime-100 text-lg">
                   Selamat datang, <span className="font-semibold text-white">{userSession?.username}</span>
                   <br />
@@ -584,7 +558,7 @@ const Homepage = () => {
                     setNewPoolName("")
                     setGeneratedCode("")
                   }}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-8 py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
+                  className="bg-gradient-to-r from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 text-white px-8 py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
                   Batal
                 </button>
@@ -693,11 +667,35 @@ const Homepage = () => {
                           {getStatusText(pool.status)}
                         </span>
                       </div>
-                      <div className="grid grid-cols-3 gap-3">
+
+                      {/* Pool Information */}
+                      <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <span className="text-gray-500 font-medium">ID Kolam:</span>
+                            <p className="text-gray-800 font-semibold">{pool.id}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500 font-medium">ID User:</span>
+                            <p className="text-gray-800 font-semibold">{pool.iduser || userSession?.id}</p>
+                          </div>
+                          <div className="col-span-2">
+                            <span className="text-gray-500 font-medium">Nama Kolam:</span>
+                            <p className="text-gray-800 font-semibold">{pool.name || `Kolam ${pool.code}`}</p>
+                          </div>
+                          <div className="col-span-2">
+                            <span className="text-gray-500 font-medium">Kode Kolam:</span>
+                            <p className="text-gray-800 font-semibold font-mono">{pool.code}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Button */}
+                      <div className="w-full">
                         <button
                           onClick={() => handleSinglePoolToggle(pool)}
                           disabled={apiLoading}
-                          className={`px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 disabled:opacity-50 shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple ${
+                          className={`w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 disabled:opacity-50 shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple ${
                             pool.status
                               ? "bg-gradient-to-r from-orange-400 to-red-500 text-white hover:from-orange-500 hover:to-red-600"
                               : "bg-gradient-to-r from-lime-400 to-green-500 text-white hover:from-lime-500 hover:to-green-600"
@@ -714,19 +712,6 @@ const Homepage = () => {
                               Aktifkan
                             </>
                           )}
-                        </button>
-                        <button
-                          onClick={() => getSinglePool(pool.code, pool.id)}
-                          disabled={apiLoading}
-                          className="px-4 py-3 bg-gradient-to-r from-blue-400 to-cyan-500 text-white hover:from-blue-500 hover:to-cyan-600 disabled:opacity-50 rounded-xl text-sm transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
-                        >
-                          <Eye size={16} />
-                        </button>
-                        <button
-                          disabled={apiLoading}
-                          className="px-4 py-3 bg-gradient-to-r from-gray-400 to-gray-500 text-white hover:from-gray-500 hover:to-gray-600 disabled:opacity-50 rounded-xl text-sm transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
-                        >
-                          <Edit3 size={16} />
                         </button>
                       </div>
                     </div>
