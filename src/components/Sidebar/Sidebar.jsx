@@ -91,7 +91,7 @@ const Sidebar = () => {
     },
     // Menambahkan menu Feeder
     {
-      name: "Feeder Scheduler",
+      name: "Feeder Schedule",
       link: "/feeder",
       icon: Hamburger,
       description: "Kontrol Feeder IoT", 
