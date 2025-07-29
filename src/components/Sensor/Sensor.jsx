@@ -15,13 +15,13 @@ import {
   Eye,
   Download,
   Calendar,
-  ImageIcon,
   FileText,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import html2canvas from "html2canvas"
 import Sidebar from "../Sidebar/Sidebar"
 import "./Sensor.css"
+import imageSrc from '/assets/header.png';
 
 // Enhanced Chart Component with detailed data display
 const SimpleLineChart = ({ data, dataKey, color, title, unit = "", chartRef }) => {
@@ -499,20 +499,16 @@ const Sensor = () => {
       alert("Mohon pilih tanggal mulai dan tanggal akhir")
       return
     }
-
     const start = new Date(startDate)
     const end = new Date(endDate)
-
     if (start > end) {
       alert("Tanggal mulai tidak boleh lebih besar dari tanggal akhir")
       return
     }
-
     const filtered = historicalData.filter((item) => {
       const itemDate = new Date(item.timestamp)
       return itemDate >= start && itemDate <= end
     })
-
     setFilteredData(filtered)
     setDateFilterActive(true)
   }
@@ -528,7 +524,6 @@ const Sensor = () => {
   // Download CSV function
   const downloadCSV = () => {
     const dataToDownload = dateFilterActive ? filteredData : historicalData
-
     if (dataToDownload.length === 0) {
       alert("Tidak ada data untuk diunduh")
       return
@@ -593,7 +588,6 @@ const Sensor = () => {
       alert("Chart tidak ditemukan")
       return
     }
-
     try {
       const canvas = await html2canvas(chartElement, {
         backgroundColor: "#ffffff",
@@ -601,7 +595,6 @@ const Sensor = () => {
         logging: false,
         useCORS: true,
       })
-
       const link = document.createElement("a")
       link.download = `${chartType}-chart-${selectedPool}-${period}-${new Date().toISOString().split("T")[0]}.png`
       link.href = canvas.toDataURL()
@@ -617,7 +610,6 @@ const Sensor = () => {
     const end = new Date()
     const start = new Date()
     start.setDate(start.getDate() - days)
-
     setStartDate(start.toISOString().slice(0, 16))
     setEndDate(end.toISOString().slice(0, 16))
   }
@@ -719,8 +711,16 @@ const Sensor = () => {
       {/* Main Content */}
       <div className="flex-grow">
         {/* Header */}
-        <div className="bg-gradient-to-r from-lime-400 via-green-400 to-emerald-400 shadow-xl">
-          <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        <div
+          className="shadow-xl relative overflow-hidden"
+          style={{
+            backgroundImage: `url(${imageSrc})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
+        >
+          <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
             <div className="flex justify-between items-center py-8">
               <div className="flex items-center gap-6 animate-slideInFromLeft">
                 <button
@@ -730,11 +730,14 @@ const Sensor = () => {
                   <ArrowLeft size={24} className="text-white" />
                 </button>
                 <div>
-                  <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg flex items-center gap-3">
+                  <h1
+                    className="text-4xl font-bold text-white mb-2 drop-shadow-2xl flex items-center gap-3"
+                    style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.5)" }}
+                  >
                     <Activity size={36} />
                     Monitoring Sensor
                   </h1>
-                  <p className="text-lime-100 text-lg">
+                  <p className="text-white text-lg bg-black/20 px-3 py-1 rounded-lg backdrop-blur-sm inline-block mt-1">
                     Pantau data sensor kolam budidaya secara real-time (Update per jam)
                   </p>
                 </div>
@@ -1074,7 +1077,7 @@ const Sensor = () => {
                       >
                         <FileText size={16} />
                         Unduh CSV {dateFilterActive ? "(Filtered)" : "(All Data)"}
-                      </button> 
+                      </button>
                     </div>
                   </div>
 

@@ -1,9 +1,24 @@
 "use client"
-
 import { useState, useEffect } from "react"
-import { ArrowLeft, RefreshCw, Cpu, Zap, CheckCircle, AlertCircle, Wifi, WifiOff, Power, Info, User, Key, Globe, Code } from 'lucide-react'
+import {
+  ArrowLeft,
+  RefreshCw,
+  Cpu,
+  Zap,
+  CheckCircle,
+  AlertCircle,
+  Wifi,
+  WifiOff,
+  Power,
+  Info,
+  User,
+  Key,
+  Globe,
+  Code,
+} from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../Sidebar/Sidebar"
+import imageSrc from '/assets/header.png';
 
 const MicroController = () => {
   const [pools, setPools] = useState([])
@@ -14,7 +29,6 @@ const MicroController = () => {
   const [loading, setLoading] = useState(false)
   const [notification, setNotification] = useState(null)
   const [connectionStatus, setConnectionStatus] = useState("disconnected")
-
   // Relay Data State
   const [relayData, setRelayData] = useState(null)
   const [relayLoading, setRelayLoading] = useState(false)
@@ -46,7 +60,6 @@ const MicroController = () => {
   // Fetch available pools
   const fetchPools = async () => {
     if (!userSession?.id || !userSession?.token) return
-
     try {
       const response = await fetch(`${POOL_API_BASE}/select/all?id=${userSession.id}`, {
         method: "GET",
@@ -55,9 +68,7 @@ const MicroController = () => {
           Authorization: `Bearer ${userSession.token}`,
         },
       })
-
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-
       const data = await response.json()
       if (data.status === "200 OK" && data.payload) {
         setPools(data.payload)
@@ -77,19 +88,15 @@ const MicroController = () => {
       showNotification("Pilih kolam terlebih dahulu", "error")
       return
     }
-
     if (!userSession?.id || !userSession?.token) {
       showNotification("Session tidak valid", "error")
       return
     }
-
     try {
       setRelayLoading(true)
       setConnectionStatus("connecting")
-
       const url = `${MICRO_RELAY_API}?code=${selectedPool}&iduser=${userSession.id}`
       console.log("Getting relay status from:", url)
-
       const response = await fetch(url, {
         method: "GET",
         headers: {
@@ -97,23 +104,18 @@ const MicroController = () => {
           Authorization: `Bearer ${userSession.token}`,
         },
       })
-
       console.log("Relay response status:", response.status)
-
       if (!response.ok) {
         const errorText = await response.text()
         console.log("Relay error response:", errorText)
         throw new Error(`HTTP error! status: ${response.status} - ${errorText}`)
       }
-
       const data = await response.json()
       console.log("Relay response data:", data)
-
       if (data.status === "200 OK" && data.payload) {
         setRelayData(data.payload)
         showNotification(`✅ Relay ${data.payload.code} ditemukan! Status: ${data.payload.val ? "ON" : "OFF"}`)
         setConnectionStatus("connected")
-        
         // Auto disconnect after 3 seconds
         setTimeout(() => {
           setConnectionStatus("disconnected")
@@ -208,8 +210,16 @@ const MicroController = () => {
         )}
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-lime-400 via-green-400 to-emerald-400 shadow-xl">
-          <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        <div
+          className="shadow-xl relative overflow-hidden"
+          style={{
+            backgroundImage: `url(${imageSrc})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
+        >
+          <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
             <div className="flex justify-between items-center py-8">
               <div className="flex items-center gap-6 animate-slideInFromLeft">
                 <button
@@ -219,24 +229,26 @@ const MicroController = () => {
                   <ArrowLeft size={24} className="text-white" />
                 </button>
                 <div>
-                  <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg flex items-center gap-3">
+                  <h1
+                    className="text-4xl font-bold text-white mb-2 drop-shadow-2xl flex items-center gap-3"
+                    style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.5)" }}
+                  >
                     <Cpu size={36} />
                     MicroController ESP32
                   </h1>
-                  <p className="text-lime-100 text-lg">Panduan koneksi dan status relay IoT</p>
+                  <p className="text-white text-lg bg-black/20 px-3 py-1 rounded-lg backdrop-blur-sm inline-block mt-1">
+                    Panduan koneksi dan status relay IoT
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-4 animate-slideInFromRight">
                 {/* Connection Status */}
                 <div
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 ${getConnectionStatusColor()} ${
-                    connectionStatus === "connected" ? "connection-pulse" : ""
-                  }`}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 ${getConnectionStatusColor()} ${connectionStatus === "connected" ? "connection-pulse" : ""}`}
                 >
                   {getConnectionIcon()}
                   <span className="font-semibold">{getConnectionText()}</span>
                 </div>
-
                 {/* Pool Selector */}
                 <select
                   value={selectedPool}
@@ -347,8 +359,7 @@ const MicroController = () => {
                   {/* Connection Guide Image */}
                   <div className="bg-gradient-to-br from-teal-100 to-cyan-100 rounded-2xl p-6 border-2 border-teal-200">
                     <h4 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                      <Info size={24} className="text-teal-600" />
-                      📘 Cara Menggunakan API
+                      <Info size={24} className="text-teal-600" />📘 Cara Menggunakan API
                     </h4>
                     <img
                       src="/assets/Computer troubleshooting-bro.svg"
@@ -382,7 +393,6 @@ const MicroController = () => {
                       </div>
                     </div>
                   </div>
-
                   {/* Technical Implementation */}
                   <div className="space-y-6">
                     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-200">
@@ -432,7 +442,7 @@ const MicroController = () => {
                         <Globe size={20} className="text-yellow-600" />
                         Contoh JSON Payload
                       </h4>
-                      <pre className="bg-gray-800 text-green-400 p-4 rounded-lg text-xs overflow-x-auto">
+                       <pre className="bg-gray-800 text-green-400 p-4 rounded-lg text-xs overflow-x-auto">
                         {`{
   "iduser": "${userSession?.id || "USER_ID"}",
   "code": "${selectedPool || "POOL_CODE"}",

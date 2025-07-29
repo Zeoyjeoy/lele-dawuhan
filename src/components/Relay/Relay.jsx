@@ -16,6 +16,7 @@ import {
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../Sidebar/Sidebar"
 import "./Relay.css"
+import imageSrc from '/assets/header.png';
 
 const Relay = () => {
   const [relays, setRelays] = useState([])
@@ -29,11 +30,11 @@ const Relay = () => {
   const [apiLoading, setApiLoading] = useState(false)
   const [userSession, setUserSession] = useState(null)
   const [sidebarVisible, setSidebarVisible] = useState(true)
+
   const navigate = useNavigate()
 
   // localStorage management - FIXED: Include user ID in key
   const RELAY_STORAGE_KEY = `relays_user_${userSession?.id || "default"}`
-
   const saveRelaysToStorage = (relaysData) => {
     try {
       localStorage.setItem(RELAY_STORAGE_KEY, JSON.stringify(relaysData))
@@ -94,11 +95,9 @@ const Relay = () => {
       console.log("No user session or token, cannot fetch pools")
       return
     }
-
     try {
       const url = `${POOL_API_BASE}/select/all?id=${userSession.id}`
       console.log("Fetching pools from:", url)
-
       const response = await fetch(url, {
         method: "GET",
         headers: {
@@ -106,14 +105,11 @@ const Relay = () => {
           Authorization: `Bearer ${userSession.token}`,
         },
       })
-
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-
       const data = await response.json()
       console.log("Pools data received:", data)
-
       if (data.status === "200 OK" && data.payload) {
         setPools(data.payload)
       } else {
@@ -131,15 +127,12 @@ const Relay = () => {
       console.log("No user session or token, cannot fetch relays")
       return
     }
-
     try {
       setLoading(true)
       console.log("Fetching relays from server...")
-
       // FIXED: Use the correct endpoint for fetching user's relays
       const url = `${RELAY_API_BASE}/relay/all?id=${userSession.id}`
       console.log("Fetching relays from:", url)
-
       const response = await fetch(url, {
         method: "GET",
         headers: {
@@ -147,14 +140,11 @@ const Relay = () => {
           Authorization: `Bearer ${userSession.token}`,
         },
       })
-
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-
       const data = await response.json()
       console.log("Relays data received:", data)
-
       let serverRelays = []
       if (data.status === "200 OK" && data.payload && Array.isArray(data.payload)) {
         // Map server data to include pool names
@@ -166,11 +156,9 @@ const Relay = () => {
           }
         })
       }
-
       // FIXED: Always use server data as source of truth for new sessions
       console.log("Setting relays from server:", serverRelays)
       setRelays(serverRelays)
-
       // Save to localStorage for offline access
       if (serverRelays.length > 0) {
         saveRelaysToStorage(serverRelays)
@@ -180,7 +168,6 @@ const Relay = () => {
       }
     } catch (error) {
       console.error("Error fetching relays from server:", error)
-
       // FIXED: Only fallback to localStorage if server is unreachable
       // and user has existing data
       const storedRelays = loadRelaysFromStorage()
@@ -238,7 +225,6 @@ const Relay = () => {
       showNotification("Kode kolam harus dipilih", "error")
       return
     }
-
     if (!userSession?.id) {
       showNotification("Session tidak valid, silakan login ulang", "error")
       return
@@ -265,9 +251,7 @@ const Relay = () => {
         code: newRelayCode.trim(),
         iduser: userSession.id.toString(),
       }
-
       console.log("Adding relay with data:", requestData)
-
       const response = await fetch(`${RELAY_API_BASE}/save`, {
         method: "POST",
         headers: {
@@ -276,16 +260,12 @@ const Relay = () => {
         },
         body: JSON.stringify(requestData),
       })
-
       console.log("Add relay response status:", response.status)
-
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-
       const data = await response.json()
       console.log("Add relay response data:", data)
-
       if (data.status === "201 CREATED" && data.payload) {
         // Store the exact data returned from server
         const newRelay = {
@@ -295,13 +275,10 @@ const Relay = () => {
           iduser: data.payload.iduser || userSession.id,
           poolName: selectedPool.name,
         }
-
         console.log("New relay object:", newRelay)
         const updatedRelays = [...relays, newRelay]
-
         // FIXED: Use the new save function
         saveRelaysAfterAction(updatedRelays)
-
         setNewRelayCode("")
         setNewRelayVal(true)
         setShowAddForm(false)
@@ -321,7 +298,6 @@ const Relay = () => {
   const updateSingleRelayValue = async (code, val, relayId) => {
     try {
       console.log("Updating single relay value:", { code, val, relayId, userId: userSession.id })
-
       const response = await fetch(`${RELAY_API_BASE}/updateValByCode?code=${code}&val=${val}&id=${userSession.id}`, {
         method: "PUT",
         headers: {
@@ -329,16 +305,12 @@ const Relay = () => {
           Authorization: `Bearer ${userSession.token}`,
         },
       })
-
       console.log("Update relay response status:", response.status)
-
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-
       const data = await response.json()
       console.log("Update relay response data:", data)
-
       if (data.status === "200 OK") {
         return { success: true, relayId, code, val }
       } else {
@@ -353,11 +325,9 @@ const Relay = () => {
   // Handle single relay toggle
   const handleSingleRelayToggle = async (relay) => {
     const newVal = !relay.val
-
     try {
       setApiLoading(true)
       const result = await updateSingleRelayValue(relay.code, newVal, relay.id)
-
       if (result.success) {
         const updatedRelays = relays.map((r) => (r.id === relay.id ? { ...r, val: newVal } : r))
         saveRelaysAfterAction(updatedRelays)
@@ -377,14 +347,11 @@ const Relay = () => {
   const handleBulkRelayChange = async (activate) => {
     try {
       setApiLoading(true)
-
       const selectedRelayObjects = selectedRelays.map((relayId) => relays.find((r) => r.id === relayId)).filter(Boolean)
-
       console.log(
         "Starting bulk update for relays:",
         selectedRelayObjects.map((r) => r.code),
       )
-
       let successCount = 0
       let failureCount = 0
       const results = []
@@ -396,10 +363,8 @@ const Relay = () => {
           if (results.length > 0) {
             await new Promise((resolve) => setTimeout(resolve, 200))
           }
-
           const result = await updateSingleRelayValue(relay.code, activate, relay.id)
           results.push(result)
-
           if (result.success) {
             successCount++
             console.log(`✓ Relay ${relay.code} updated successfully`)
@@ -423,7 +388,6 @@ const Relay = () => {
           }
           return relay
         })
-
         saveRelaysAfterAction(updatedRelays)
       }
 
@@ -438,7 +402,6 @@ const Relay = () => {
       } else {
         showNotification(`Semua relay gagal diubah. Periksa koneksi dan coba lagi.`, "error")
       }
-
       setSelectedRelays([])
     } catch (error) {
       console.error("Error in bulk relay update:", error)
@@ -532,8 +495,16 @@ const Relay = () => {
         )}
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-lime-400 via-green-400 to-emerald-400 shadow-xl">
-          <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        <div
+          className="shadow-xl relative overflow-hidden"
+          style={{
+            backgroundImage: `url(${imageSrc})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
+        >
+          <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
             <div className="flex justify-between items-center py-8">
               <div className="flex items-center gap-6 animate-slideInFromLeft">
                 <button
@@ -543,11 +514,16 @@ const Relay = () => {
                   <ArrowLeft size={24} className="text-white" />
                 </button>
                 <div>
-                  <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg flex items-center gap-3">
+                  <h1
+                    className="text-4xl font-bold text-white mb-2 drop-shadow-2xl flex items-center gap-3"
+                    style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.5)" }}
+                  >
                     <Zap size={36} />
                     Manajemen Relay
                   </h1>
-                  <p className="text-lime-100 text-lg">Kelola relay untuk kolam budidaya Anda</p>
+                  <p className="text-white text-lg bg-black/20 px-3 py-1 rounded-lg backdrop-blur-sm inline-block mt-1">
+                    Kelola relay untuk kolam budidaya Anda
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-4 animate-slideInFromRight">
@@ -637,7 +613,6 @@ const Relay = () => {
                 </div>
                 <h3 className="text-2xl font-bold text-gray-800">Tambah Relay Baru</h3>
               </div>
-
               {getAvailablePools().length === 0 ? (
                 <div className="text-center py-8">
                   <div className="w-24 h-24 bg-gradient-to-br from-lime-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -795,9 +770,9 @@ const Relay = () => {
                           </div>
                         </div>
                         <span
-                          className={`px-4 py-2 rounded-xl text-sm font-bold status-badge ${getStatusColor(relay.val)} ${
-                            relay.val ? "animate-relayPulse" : ""
-                          }`}
+                          className={`px-4 py-2 rounded-xl text-sm font-bold status-badge ${getStatusColor(
+                            relay.val,
+                          )} ${relay.val ? "animate-relayPulse" : ""}`}
                         >
                           {getStatusText(relay.val)}
                         </span>

@@ -1,11 +1,10 @@
 "use client"
-
 import { useState, useEffect } from "react"
-import { Plus, Power, PowerOff, AlertCircle, CheckCircle, Users, Activity, TrendingUp, Droplets } from "lucide-react"
+import { Plus, Power, PowerOff, AlertCircle, CheckCircle, Users, Activity, TrendingUp, Droplets } from 'lucide-react'
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../Sidebar/Sidebar"
 import "./Homepage.css"
-
+import imageSrc from '/assets/header.png';
 const Homepage = () => {
   const [pools, setPools] = useState([])
   const [selectedPools, setSelectedPools] = useState([])
@@ -17,6 +16,7 @@ const Homepage = () => {
   const [apiLoading, setApiLoading] = useState(false)
   const [userSession, setUserSession] = useState(null)
   const [sidebarVisible, setSidebarVisible] = useState(true)
+
   const navigate = useNavigate()
 
   // API Base URL
@@ -280,7 +280,6 @@ const Homepage = () => {
       console.log("Bulk update results:", results)
 
       const successCount = results.filter((r) => r && r.success).length
-
       if (successCount > 0) {
         const updatedPools = pools.map((pool) =>
           selectedPools.includes(pool.id) ? { ...pool, status: activate } : pool,
@@ -291,7 +290,6 @@ const Homepage = () => {
       } else {
         showNotification("Gagal mengubah status kolam", "error")
       }
-
       setSelectedPools([])
     } catch (error) {
       console.error("Error updating pool status:", error)
@@ -420,19 +418,31 @@ const Homepage = () => {
           </div>
         )}
 
-        {/* Header */}
-        <div className="bg-gradient-to-r from-lime-400 via-green-400 to-emerald-400 shadow-xl">
-          <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        {/* Header with Background Image */}
+        <div 
+          className="relative shadow-xl overflow-hidden"
+          style={{
+            backgroundImage: `url(${imageSrc})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        >
+          
+          
+          <div className="relative max-w-7xl mx-auto px-6 lg:px-8">
             <div className="flex justify-between items-center py-8">
               <div className="animate-slideInFromLeft">
-                <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">Monitoring Kolam Budidaya 🐟🫧</h1>
-                <p className="text-lime-100 text-lg">
-                  Selamat datang, <span className="font-semibold text-white">{userSession?.username}</span>
+                <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-2xl" style={{ textShadow: '2px 2px 4px rgba(76, 133, 91, 0.8), 0 0 8px rgba(0,0,0,0.5)' }}>
+                  Monitoring Kolam Budidaya 🐟🫧
+                </h1>
+                <p className="text-white text-lg drop-shadow-xl" style={{ textShadow: '1px 1px 3px rgba(83, 203, 83, 0.69), 0 0 6px rgba(0, 0, 0, 0.4)' }}>
+                  Selamat datang, <span className="font-semibold text-white bg-black/20 px-2 py-1 rounded">{userSession?.username}</span>
                   <br />
-                  <span className="text-sm">Kelola dan pantau status kolam budidaya Anda dengan mudah</span>
+                  <span className="text-sm bg-black/20 px-2 py-1 rounded inline-block mt-1">Kelola dan pantau status kolam budidaya Anda dengan mudah</span>
                   <br />
                   {getLastSyncTime() && (
-                    <span className="text-xs opacity-75">
+                    <span className="text-xs opacity-90 bg-black/20 px-2 py-1 rounded inline-block mt-1">
                       Terakhir disinkronkan: {getLastSyncTime().toLocaleString("id-ID")}
                     </span>
                   )}

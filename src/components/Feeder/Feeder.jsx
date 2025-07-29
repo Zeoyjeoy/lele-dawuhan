@@ -1,9 +1,25 @@
 "use client"
 import { useState, useEffect } from "react"
-import { ArrowLeft, RefreshCw, Clock, Plus, Calendar, CheckCircle, AlertCircle, Edit3, Trash2, User, Key, Code, Activity, TrendingUp, CalendarDays, Timer } from 'lucide-react'
+import {
+  ArrowLeft,
+  RefreshCw,
+  Clock,
+  Plus,
+  Calendar,
+  CheckCircle,
+  AlertCircle,
+  User,
+  Key,
+  Code,
+  Activity,
+  TrendingUp,
+  CalendarDays,
+  Timer,
+} from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../Sidebar/Sidebar"
 import "./Feeder.css"
+import imageSrc from '/assets/header.png';
 
 const Feeder = () => {
   const [schedules, setSchedules] = useState([])
@@ -63,7 +79,10 @@ const Feeder = () => {
         const savedSchedules = localStorage.getItem(poolSpecificKey)
         if (savedSchedules) {
           const parsedSchedules = JSON.parse(savedSchedules)
-          console.log(`Schedules loaded from localStorage for user: ${userSession.id}, pool: ${selectedPool}`, parsedSchedules)
+          console.log(
+            `Schedules loaded from localStorage for user: ${userSession.id}, pool: ${selectedPool}`,
+            parsedSchedules,
+          )
           return parsedSchedules
         }
       }
@@ -117,7 +136,6 @@ const Feeder = () => {
   // Fetch available pools
   const fetchPools = async () => {
     if (!userSession?.id || !userSession?.token) return
-
     try {
       const response = await fetch(`${POOL_API_BASE}/select/all?id=${userSession.id}`, {
         method: "GET",
@@ -126,9 +144,7 @@ const Feeder = () => {
           Authorization: `Bearer ${userSession.token}`,
         },
       })
-
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-
       const data = await response.json()
       if (data.status === "200 OK" && data.payload) {
         setPools(data.payload)
@@ -148,7 +164,6 @@ const Feeder = () => {
       console.log("Missing required data for loading schedules")
       return
     }
-
     setLoading(true)
     const cachedSchedules = loadSchedulesFromStorage()
     setSchedules(cachedSchedules)
@@ -162,7 +177,6 @@ const Feeder = () => {
       showNotification("Tanggal dan waktu harus diisi", "error")
       return
     }
-
     if (!selectedPool || !userSession?.id || !userSession?.token) {
       showNotification("Session tidak valid atau kolam belum dipilih", "error")
       return
@@ -186,7 +200,7 @@ const Feeder = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${userSession.token}`,
+          Authorization: `Bearer ${userSession.token}`,
         },
         body: JSON.stringify(requestData),
       })
@@ -215,11 +229,9 @@ const Feeder = () => {
           poolCode: selectedPool,
           createdAt: new Date().toISOString(), // Add timestamp for tracking
         }
-
         const updatedSchedules = [...schedules, newScheduleItem]
         setSchedules(updatedSchedules)
         saveSchedulesToStorage(updatedSchedules)
-
         setNewSchedule({ date: "", time: "", code: "" })
         setShowAddForm(false)
         showNotification(
@@ -238,7 +250,7 @@ const Feeder = () => {
 
   // Delete schedule function (remove from localStorage)
   const handleDeleteSchedule = (scheduleId) => {
-    const updatedSchedules = schedules.filter(schedule => schedule.id !== scheduleId)
+    const updatedSchedules = schedules.filter((schedule) => schedule.id !== scheduleId)
     setSchedules(updatedSchedules)
     saveSchedulesToStorage(updatedSchedules)
     showNotification("Jadwal berhasil dihapus", "success")
@@ -335,10 +347,10 @@ const Feeder = () => {
               notification.type === "success"
                 ? "bg-gradient-to-r from-lime-50 to-green-50 border-lime-400 text-green-800"
                 : notification.type === "warning"
-                ? "bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-400 text-yellow-800"
-                : notification.type === "info"
-                ? "bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-400 text-blue-800"
-                : "bg-gradient-to-r from-red-50 to-pink-50 border-red-400 text-red-800"
+                  ? "bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-400 text-yellow-800"
+                  : notification.type === "info"
+                    ? "bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-400 text-blue-800"
+                    : "bg-gradient-to-r from-red-50 to-pink-50 border-red-400 text-red-800"
             }`}
           >
             <div className="flex items-center gap-3">
@@ -347,10 +359,10 @@ const Feeder = () => {
                   notification.type === "success"
                     ? "bg-lime-100"
                     : notification.type === "warning"
-                    ? "bg-yellow-100"
-                    : notification.type === "info"
-                    ? "bg-blue-100"
-                    : "bg-red-100"
+                      ? "bg-yellow-100"
+                      : notification.type === "info"
+                        ? "bg-blue-100"
+                        : "bg-red-100"
                 }`}
               >
                 {notification.type === "success" ? (
@@ -362,8 +374,8 @@ const Feeder = () => {
                       notification.type === "warning"
                         ? "text-yellow-600"
                         : notification.type === "info"
-                        ? "text-blue-600"
-                        : "text-red-600"
+                          ? "text-blue-600"
+                          : "text-red-600"
                     }
                   />
                 )}
@@ -374,10 +386,10 @@ const Feeder = () => {
                   {notification.type === "success"
                     ? "Berhasil!"
                     : notification.type === "warning"
-                    ? "Peringatan"
-                    : notification.type === "info"
-                    ? "Informasi"
-                    : "Terjadi kesalahan"}
+                      ? "Peringatan"
+                      : notification.type === "info"
+                        ? "Informasi"
+                        : "Terjadi kesalahan"}
                 </p>
               </div>
             </div>
@@ -400,8 +412,16 @@ const Feeder = () => {
         )}
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-lime-400 via-green-400 to-emerald-400 shadow-xl">
-          <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        <div
+          className="shadow-xl relative overflow-hidden"
+          style={{
+            backgroundImage: `url(${imageSrc})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
+        >
+          <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
             <div className="flex justify-between items-center py-8">
               <div className="flex items-center gap-6 animate-slideInFromLeft">
                 <button
@@ -411,11 +431,16 @@ const Feeder = () => {
                   <ArrowLeft size={24} className="text-white" />
                 </button>
                 <div>
-                  <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg flex items-center gap-3">
+                  <h1
+                    className="text-4xl font-bold text-white mb-2 drop-shadow-2xl flex items-center gap-3"
+                    style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.5)" }}
+                  >
                     <Clock size={36} />
                     Jadwal Pemberian Pakan
                   </h1>
-                  <p className="text-lime-100 text-lg">Kelola jadwal pemberian pakan otomatis untuk kolam budidaya</p>
+                  <p className="text-white text-lg bg-black/20 px-3 py-1 rounded-lg backdrop-blur-sm inline-block mt-1">
+                    Kelola jadwal pemberian pakan otomatis untuk kolam budidaya
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-4 animate-slideInFromRight">
@@ -635,7 +660,6 @@ const Feeder = () => {
               {schedules.map((schedule, index) => {
                 const scheduleDate = new Date(schedule.schedule)
                 const statusInfo = getScheduleStatus(schedule.schedule)
-
                 return (
                   <div
                     key={schedule.id || index}
