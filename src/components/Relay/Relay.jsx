@@ -68,8 +68,8 @@ const Relay = () => {
   }
 
   // API Base URLs
-  const RELAY_API_BASE = "https://api.monitoring.infarm.web.id/api/control"
-  const POOL_API_BASE = "https://api.monitoring.infarm.web.id/api/kolam"
+  const RELAY_API_BASE = "https://monitoring.infarm.web.id/servers/api/control"
+  const POOL_API_BASE = "https://monitoring.infarm.web.id/servers/api/kolam"
 
   // Get user session on component mount
   useEffect(() => {

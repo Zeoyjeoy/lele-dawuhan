@@ -42,8 +42,8 @@ const Feeder = () => {
   const navigate = useNavigate()
 
   // API Base URLs
-  const SCHEDULE_API_BASE = "https://api.monitoring.infarm.web.id/api/schedule"
-  const POOL_API_BASE = "https://api.monitoring.infarm.web.id/api/kolam"
+  const SCHEDULE_API_BASE = "https://monitoring.infarm.web.id/servers/api/schedule"
+  const POOL_API_BASE = "https://monitoring.infarm.web.id/servers/api/kolam"
 
   // User and pool-specific localStorage keys
   const getUserSpecificKey = (key) => {
