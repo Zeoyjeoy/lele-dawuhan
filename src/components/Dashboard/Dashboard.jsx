@@ -97,7 +97,7 @@ function Dashboard() {
       console.log("Username:", username)
       console.log("Password:", password)
 
-      const response = await fetch("http://43.165.198.49:8089/api/auth/register", {
+      const response = await fetch("https://api.monitoring.infarm.web.id/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -154,7 +154,7 @@ function Dashboard() {
       console.log("Username:", username)
       console.log("Password:", password)
 
-      const response = await fetch("http://43.165.198.49:8089/api/auth/login", {
+      const response = await fetch("https://api.monitoring.infarm.web.id/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

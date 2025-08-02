@@ -20,7 +20,7 @@ const Homepage = () => {
   const navigate = useNavigate()
 
   // API Base URL
-  const API_BASE = "http://43.165.198.49:8089/api/kolam"
+  const API_BASE = "https://api.monitoring.infarm.web.id/api/kolam"
 
   // User-specific localStorage keys
   const getUserSpecificKey = (key) => {

@@ -68,8 +68,8 @@ const Relay = () => {
   }
 
   // API Base URLs
-  const RELAY_API_BASE = "http://43.165.198.49:8089/api/control"
-  const POOL_API_BASE = "http://43.165.198.49:8089/api/kolam"
+  const RELAY_API_BASE = "https://api.monitoring.infarm.web.id/api/control"
+  const POOL_API_BASE = "https://api.monitoring.infarm.web.id/api/kolam"
 
   // Get user session on component mount
   useEffect(() => {

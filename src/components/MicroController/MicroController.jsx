@@ -36,8 +36,8 @@ const MicroController = () => {
   const navigate = useNavigate()
 
   // API Base URLs
-  const MICRO_RELAY_API = "http://43.165.198.49:8089/api/control/micro/getByCode"
-  const POOL_API_BASE = "http://43.165.198.49:8089/api/kolam"
+  const MICRO_RELAY_API = "https://api.monitoring.infarm.web.id/api/control/micro/getByCode"
+  const POOL_API_BASE = "https://api.monitoring.infarm.web.id/api/kolam"
 
   // Get user session on component mount
   useEffect(() => {
@@ -404,7 +404,7 @@ const MicroController = () => {
                         <div className="bg-white p-3 rounded-lg border border-blue-200">
                           <p className="text-gray-600 font-semibold">API Endpoint:</p>
                           <code className="text-blue-600 text-xs break-all">
-                            http://43.165.198.49:8089/api/monitoring/micro/sensors
+                            https://api.monitoring.infarm.web.id/api/control/micro/sensors
                           </code>
                         </div>
                         <div className="bg-white p-3 rounded-lg border border-blue-200">
