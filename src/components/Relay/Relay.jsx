@@ -4,11 +4,11 @@ import { Plus, Power, PowerOff, Edit3, AlertCircle, CheckCircle, ArrowLeft, Zap,
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../Sidebar/Sidebar"
 import "./Relay.css"
-// import imageSrc from '/assets/header.png'; // Remove this line as background will be solid color
+// import imageSrc from '/assets/header.png'; 
 
 const Relay = () => {
 const [relays, setRelays] = useState([])
-const [pools, setPools] = useState([]) // Available pools for selection
+const [pools, setPools] = useState([]) 
 const [selectedRelays, setSelectedRelays] = useState([])
 const [loading, setLoading] = useState(true)
 const [showAddForm, setShowAddForm] = useState(false)
@@ -141,7 +141,7 @@ const fetchRelays = async () => {
         }
       })
     }
-    // FIXED: Always use server data as source of truth for new sessions
+
     console.log("Setting relays from server:", serverRelays)
     setRelays(serverRelays)
     // Save to localStorage for offline access
@@ -170,8 +170,6 @@ const fetchRelays = async () => {
   }
 }
 
-// FIXED: Only save to localStorage when relays are updated via user actions
-// Remove automatic save on every relays state change
 const saveRelaysAfterAction = (updatedRelays) => {
   setRelays(updatedRelays)
   saveRelaysToStorage(updatedRelays)
@@ -184,7 +182,6 @@ useEffect(() => {
   }
 }, [userSession])
 
-// FIXED: Fetch relays after pools are loaded AND user session is available
 useEffect(() => {
   if (userSession?.id && pools.length >= 0) {
     // Allow fetching even if no pools
@@ -204,7 +201,6 @@ const handleSelectRelay = (relayId) => {
   setSelectedRelays((prev) => (prev.includes(relayId) ? prev.filter((id) => id !== relayId) : [...prev, relayId]))
 }
 
-// FIXED: Add new relay with proper server sync
 const handleAddRelay = async () => {
   if (!newRelayCode.trim()) {
     showNotification("Kode kolam harus dipilih", "error")
@@ -215,14 +211,13 @@ const handleAddRelay = async () => {
     return
   }
 
-  // Check if relay already exists for this pool
+
   const existingRelay = relays.find((relay) => relay.code === newRelayCode)
   if (existingRelay) {
     showNotification("Relay untuk kolam ini sudah ada", "error")
     return
   }
 
-  // Get the selected pool info
   const selectedPool = pools.find((pool) => pool.code === newRelayCode)
   if (!selectedPool) {
     showNotification("Kolam tidak ditemukan", "error")
@@ -279,7 +274,6 @@ const handleAddRelay = async () => {
   }
 }
 
-// FIXED: Update single relay value with proper server sync
 const updateSingleRelayValue = async (code, val, relayId) => {
   try {
     console.log("Updating single relay value:", { code, val, relayId, userId: userSession.id })
@@ -341,10 +335,8 @@ const handleBulkRelayChange = async (activate) => {
     let failureCount = 0
     const results = []
 
-    // FIXED: Process relays sequentially to avoid race conditions
     for (const relay of selectedRelayObjects) {
       try {
-        // Add small delay between requests to avoid overwhelming the server
         if (results.length > 0) {
           await new Promise((resolve) => setTimeout(resolve, 200))
         }
@@ -477,7 +469,7 @@ return (
       )}
       {/* Header */}
       <div
-        className="shadow-xl relative overflow-hidden bg-green-900" // Changed to solid dark green
+        className="shadow-xl relative overflow-hidden bg-green-900" 
       >
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 relative z-10">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-8 gap-4 sm:gap-0">
@@ -490,13 +482,13 @@ return (
               </button>
               <div>
                 <h1
-                  className="text-4xl font-bold text-white mb-2 flex items-center gap-3" // Ensured text-white and removed text-shadow
+                  className="text-4xl font-bold text-white mb-2 flex items-center gap-3" 
                 >
                   <Zap size={36} />
                   Manajemen Relay
                 </h1>
                 <p
-                  className="text-white text-lg inline-block mt-1" // Ensured text-white and removed bg-black/20
+                  className="text-white text-lg inline-block mt-1"
                 >
                   Kelola relay untuk kolam budidaya Anda
                 </p>
