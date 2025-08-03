@@ -18,7 +18,7 @@ import {
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../Sidebar/Sidebar"
-import imageSrc from '/assets/header.png';
+import "./MicroController.css"
 
 const MicroController = () => {
   const [pools, setPools] = useState([])
@@ -32,7 +32,6 @@ const MicroController = () => {
   // Relay Data State
   const [relayData, setRelayData] = useState(null)
   const [relayLoading, setRelayLoading] = useState(false)
-
   const navigate = useNavigate()
 
   // API Base URLs
@@ -150,7 +149,6 @@ const MicroController = () => {
         return <WifiOff className="text-gray-400" size={20} />
     }
   }
-
   const getConnectionText = () => {
     switch (connectionStatus) {
       case "connected":
@@ -161,7 +159,6 @@ const MicroController = () => {
         return "Terputus"
     }
   }
-
   const getConnectionStatusColor = () => {
     switch (connectionStatus) {
       case "connected":
@@ -179,7 +176,6 @@ const MicroController = () => {
     <div className="min-h-screen bg-gradient-to-br from-lime-50 via-green-50 to-emerald-50 flex">
       {/* Sidebar */}
       {sidebarVisible && <Sidebar />}
-
       {/* Main Content */}
       <div className="flex-grow">
         {/* Enhanced Notification */}
@@ -208,20 +204,11 @@ const MicroController = () => {
             </div>
           </div>
         )}
-
         {/* Header */}
-        <div
-          className="shadow-xl relative overflow-hidden"
-          style={{
-            backgroundImage: `url(${imageSrc})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-          }}
-        >
-          <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
-            <div className="flex justify-between items-center py-8">
-              <div className="flex items-center gap-6 animate-slideInFromLeft">
+        <div className="shadow-xl relative overflow-hidden bg-green-900">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 relative z-10">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-8 gap-4 sm:gap-0">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 animate-slideInFromLeft">
                 <button
                   onClick={() => navigate("/homepage")}
                   className="p-3 hover:bg-white/20 rounded-xl transition-all duration-300 transform hover:scale-110"
@@ -229,19 +216,14 @@ const MicroController = () => {
                   <ArrowLeft size={24} className="text-white" />
                 </button>
                 <div>
-                  <h1
-                    className="text-4xl font-bold text-white mb-2 drop-shadow-2xl flex items-center gap-3"
-                    style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.5)" }}
-                  >
+                  <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
                     <Cpu size={36} />
                     MicroController ESP32
                   </h1>
-                  <p className="text-white text-lg bg-black/20 px-3 py-1 rounded-lg backdrop-blur-sm inline-block mt-1">
-                    Panduan koneksi dan status relay IoT
-                  </p>
+                  <p className="text-white">Panduan koneksi dan status relay IoT</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4 animate-slideInFromRight">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto animate-slideInFromRight">
                 {/* Connection Status */}
                 <div
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 ${getConnectionStatusColor()} ${connectionStatus === "connected" ? "connection-pulse" : ""}`}
@@ -253,7 +235,7 @@ const MicroController = () => {
                 <select
                   value={selectedPool}
                   onChange={(e) => setSelectedPool(e.target.value)}
-                  className="px-4 py-3 border-2 border-white/30 rounded-xl focus:outline-none focus:ring-4 focus:ring-white/20 focus:border-white/50 bg-white/90 backdrop-blur-sm font-semibold text-gray-700 transition-all duration-300"
+                  className="w-full sm:w-auto px-4 py-3 border-2 border-white/30 rounded-xl focus:outline-none focus:ring-4 focus:ring-white/20 focus:border-white/50 bg-white/90 backdrop-blur-sm font-semibold text-gray-700 transition-all duration-300"
                 >
                   <option value="">Pilih Kolam</option>
                   {pools.map((pool) => (
@@ -266,10 +248,9 @@ const MicroController = () => {
             </div>
           </div>
         </div>
-
         {/* User Information Card */}
         {userSession && selectedPoolData && (
-          <div className="max-w-7xl mx-auto px-6 lg:px-8 -mt-4 relative z-10">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 -mt-4 relative z-10">
             <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl shadow-xl border-2 border-blue-200 p-6 mb-6">
               <div className="flex items-center gap-4 mb-4">
                 <div className="bg-blue-500 p-3 rounded-xl">
@@ -310,9 +291,8 @@ const MicroController = () => {
             </div>
           </div>
         )}
-
         {/* Tab Navigation - Only 2 tabs now */}
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 relative z-10">
           <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-2 mb-6">
             <nav className="flex space-x-2">
               <button
@@ -340,8 +320,7 @@ const MicroController = () => {
             </nav>
           </div>
         </div>
-
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 pb-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pb-8">
           {/* Connection Guide Tab */}
           {activeTab === "guide" && (
             <div className="space-y-8 tab-content">
@@ -442,27 +421,13 @@ const MicroController = () => {
                         <Globe size={20} className="text-yellow-600" />
                         Contoh JSON Payload
                       </h4>
-                       <pre className="bg-gray-800 text-green-400 p-4 rounded-lg text-xs overflow-x-auto">
-                        {`{
-  "iduser": "${userSession?.id || "USER_ID"}",
-  "code": "${selectedPool || "POOL_CODE"}",
-  "timestamp": "2025-07-26T12:00:00Z",
-  "pvVoltage": "12.5",
-  "pvCurrent": "1.2",
-  "battVoltage": "11.8",
-  "envTemp": "29.0",
-  "phBioflok": "7.1",
-  "tempBioflok": "28.5",
-  "doBioflok": "6.8"
-}`}
-                      </pre>
+                      <pre className="bg-gray-800 text-green-400 p-4 rounded-lg text-xs overflow-x-auto">{`{  "iduser": "${userSession?.id || "USER_ID"}",  "code": "${selectedPool || "POOL_CODE"}",  "timestamp": "2025-07-26T12:00:00Z",  "pvVoltage": "12.5",  "pvCurrent": "1.2",  "battVoltage": "11.8",  "envTemp": "29.0",  "phBioflok": "7.1",  "tempBioflok": "28.5",  "doBioflok": "6.8"}`}</pre>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           )}
-
           {/* Relay Status Tab */}
           {activeTab === "relay" && (
             <div className="space-y-8 tab-content">
@@ -486,7 +451,6 @@ const MicroController = () => {
                     {relayLoading ? "Mengambil..." : "Get Status"}
                   </button>
                 </div>
-
                 {/* Relay Status Display */}
                 {relayData ? (
                   <div className="bg-gradient-to-r from-lime-50 to-green-50 rounded-2xl p-8 border-2 border-lime-200 animate-fadeInUp">
@@ -504,9 +468,7 @@ const MicroController = () => {
                       <div className="bg-white p-6 rounded-xl border-2 border-lime-100 shadow-lg card-hover">
                         <div className="text-sm text-gray-600 font-semibold mb-2">Status</div>
                         <div
-                          className={`text-2xl font-bold flex items-center gap-2 ${
-                            relayData.val ? "text-green-600" : "text-red-600"
-                          }`}
+                          className={`text-2xl font-bold flex items-center gap-2 ${relayData.val ? "text-green-600" : "text-red-600"}`}
                         >
                           <Power size={24} />
                           {relayData.val ? "ON" : "OFF"}
