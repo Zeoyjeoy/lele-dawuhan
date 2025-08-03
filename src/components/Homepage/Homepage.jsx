@@ -1,10 +1,11 @@
 "use client"
 import { useState, useEffect } from "react"
-import { Plus, Power, PowerOff, AlertCircle, CheckCircle, Users, Activity, TrendingUp, Droplets } from 'lucide-react'
+import { Plus, Power, PowerOff, AlertCircle, CheckCircle, Users, Activity, TrendingUp, Droplets } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../Sidebar/Sidebar"
 import "./Homepage.css"
-import imageSrc from '/assets/header.png';
+// import imageSrc from '/assets/header.png'; 
+
 const Homepage = () => {
   const [pools, setPools] = useState([])
   const [selectedPools, setSelectedPools] = useState([])
@@ -16,7 +17,6 @@ const Homepage = () => {
   const [apiLoading, setApiLoading] = useState(false)
   const [userSession, setUserSession] = useState(null)
   const [sidebarVisible, setSidebarVisible] = useState(true)
-
   const navigate = useNavigate()
 
   // API Base URL
@@ -26,7 +26,6 @@ const Homepage = () => {
   const getUserSpecificKey = (key) => {
     return userSession?.id ? `${key}_user_${userSession.id}` : key
   }
-
   const POOLS_STORAGE_KEY = "kolam_pools_data"
   const LAST_SYNC_KEY = "kolam_last_sync"
 
@@ -42,7 +41,6 @@ const Homepage = () => {
       console.error("Error saving pools to localStorage:", error)
     }
   }
-
   const loadPoolsFromStorage = () => {
     try {
       if (userSession?.id) {
@@ -58,7 +56,6 @@ const Homepage = () => {
     }
     return []
   }
-
   const getLastSyncTime = () => {
     try {
       if (userSession?.id) {
@@ -106,19 +103,16 @@ const Homepage = () => {
       setLoading(false)
       return
     }
-
     // Load from localStorage first (user-specific)
     const cachedPools = loadPoolsFromStorage()
     if (cachedPools.length > 0) {
       setPools(cachedPools)
       console.log("Loaded pools from localStorage for user:", userSession.id)
     }
-
     try {
       setLoading(true)
       const url = `${API_BASE}/select/all?id=${userSession.id}`
       console.log("Fetching pools from API:", url)
-
       const response = await fetch(url, {
         method: "GET",
         headers: {
@@ -126,16 +120,12 @@ const Homepage = () => {
           Authorization: `Bearer ${userSession.token}`,
         },
       })
-
       console.log("Response status:", response.status)
-
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-
       const data = await response.json()
       console.log("Pools data received from API:", data)
-
       if (data.status === "200 OK" && data.payload && Array.isArray(data.payload)) {
         setPools(data.payload)
         savePoolsToStorage(data.payload) // Save to localStorage
@@ -193,12 +183,10 @@ const Homepage = () => {
       showNotification("Nama kolam harus diisi", "error")
       return
     }
-
     if (!userSession?.id) {
       showNotification("Session tidak valid, silakan login ulang", "error")
       return
     }
-
     try {
       setApiLoading(true)
       const requestData = {
@@ -207,9 +195,7 @@ const Homepage = () => {
         iduser: userSession.id.toString(),
         status: true,
       }
-
       console.log("Adding pool with data:", requestData)
-
       const response = await fetch(`${API_BASE}/add`, {
         method: "POST",
         headers: {
@@ -218,16 +204,12 @@ const Homepage = () => {
         },
         body: JSON.stringify(requestData),
       })
-
       console.log("Add pool response status:", response.status)
-
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-
       const data = await response.json()
       console.log("Add pool response data:", data)
-
       if (data.status === "201 CREATED" && data.payload) {
         const updatedPools = [...pools, data.payload]
         setPools(updatedPools)
@@ -254,9 +236,7 @@ const Homepage = () => {
       const updatePromises = selectedPools.map(async (poolId) => {
         const pool = pools.find((p) => p.id === poolId)
         if (!pool) return null
-
         console.log("Updating pool status:", { code: pool.code, val: activate, id: poolId })
-
         const response = await fetch(`${API_BASE}/updatestatus?code=${pool.code}&val=${activate}&id=${poolId}`, {
           method: "PUT",
           headers: {
@@ -264,21 +244,16 @@ const Homepage = () => {
             Authorization: `Bearer ${userSession.token}`,
           },
         })
-
         console.log(`Update status response for ${pool.code}:`, response.status)
-
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
-
         const data = await response.json()
         console.log(`Update status response data for ${pool.code}:`, data)
         return { poolId, success: data.status === "200 OK" }
       })
-
       const results = await Promise.all(updatePromises)
       console.log("Bulk update results:", results)
-
       const successCount = results.filter((r) => r && r.success).length
       if (successCount > 0) {
         const updatedPools = pools.map((pool) =>
@@ -304,9 +279,7 @@ const Homepage = () => {
     try {
       setApiLoading(true)
       const newStatus = !pool.status
-
       console.log("Toggling pool status:", { pool, newStatus })
-
       const response = await fetch(`${API_BASE}/updatestatus?code=${pool.code}&val=${newStatus}&id=${pool.id}`, {
         method: "PUT",
         headers: {
@@ -314,16 +287,12 @@ const Homepage = () => {
           Authorization: `Bearer ${userSession.token}`,
         },
       })
-
       console.log("Toggle status response:", response.status)
-
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-
       const data = await response.json()
       console.log("Toggle status response data:", data)
-
       if (data.status === "200 OK") {
         const updatedPools = pools.map((p) => (p.id === pool.id ? { ...p, status: newStatus } : p))
         setPools(updatedPools)
@@ -345,7 +314,6 @@ const Homepage = () => {
       ? "bg-gradient-to-r from-lime-100 to-green-100 text-green-800 border border-green-200"
       : "bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border border-red-200"
   }
-
   const getStatusText = (status) => {
     return status ? "Aktif" : "Tidak Aktif"
   }
@@ -373,7 +341,6 @@ const Homepage = () => {
     <div className="min-h-screen bg-gradient-to-br from-lime-50 via-green-50 to-emerald-50 flex">
       {/* Sidebar */}
       {sidebarVisible && <Sidebar />}
-
       {/* Main Content */}
       <div className="flex-grow">
         {/* Enhanced Notification */}
@@ -402,7 +369,6 @@ const Homepage = () => {
             </div>
           </div>
         )}
-
         {/* Loading Overlay */}
         {apiLoading && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 backdrop-blur-sm">
@@ -417,41 +383,38 @@ const Homepage = () => {
             </div>
           </div>
         )}
-
         {/* Header with Background Image */}
-        <div 
-          className="relative shadow-xl overflow-hidden"
-          style={{
-            backgroundImage: `url(${imageSrc})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat'
-          }}
+        <div
+          className="relative shadow-xl overflow-hidden bg-green-900" // Mengubah background menjadi hijau gelap
         >
-          
-          
-          <div className="relative max-w-7xl mx-auto px-6 lg:px-8">
-            <div className="flex justify-between items-center py-8">
+          <div className="relative max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-8 gap-4 sm:gap-0">
               <div className="animate-slideInFromLeft">
-                <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-2xl" style={{ textShadow: '2px 2px 4px rgba(76, 133, 91, 0.8), 0 0 8px rgba(0,0,0,0.5)' }}>
+                <h1
+                  className="text-4xl font-bold text-white mb-2" // Menghapus drop-shadow dan style textShadow
+                >
                   Monitoring Kolam Budidaya 🐟🫧
                 </h1>
-                <p className="text-white text-lg drop-shadow-xl" style={{ textShadow: '1px 1px 3px rgba(83, 203, 83, 0.69), 0 0 6px rgba(0, 0, 0, 0.4)' }}>
-                  Selamat datang, <span className="font-semibold text-white bg-black/20 px-2 py-1 rounded">{userSession?.username}</span>
+                <p
+                  className="text-white text-lg" // Menghapus drop-shadow dan style textShadow
+                >
+                  Selamat datang, <span className="font-semibold text-white">{userSession?.username}</span>
                   <br />
-                  <span className="text-sm bg-black/20 px-2 py-1 rounded inline-block mt-1">Kelola dan pantau status kolam budidaya Anda dengan mudah</span>
+                  <span className="text-sm inline-block mt-1">
+                    Kelola dan pantau status kolam budidaya Anda dengan mudah
+                  </span>
                   <br />
                   {getLastSyncTime() && (
-                    <span className="text-xs opacity-90 bg-black/20 px-2 py-1 rounded inline-block mt-1">
+                    <span className="text-xs opacity-90 inline-block mt-1">
                       Terakhir disinkronkan: {getLastSyncTime().toLocaleString("id-ID")}
                     </span>
                   )}
                 </p>
               </div>
-              <div className="flex items-center gap-4 animate-slideInFromRight">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto animate-slideInFromRight">
                 <button
                   onClick={() => setShowAddForm(!showAddForm)}
-                  className="bg-white hover:bg-lime-50 text-green-700 px-6 py-3 rounded-xl flex items-center gap-3 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple font-semibold"
+                  className="w-full sm:w-auto bg-white hover:bg-lime-50 text-green-700 px-6 py-3 rounded-xl flex items-center justify-center sm:justify-start gap-3 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple font-semibold"
                 >
                   <Plus size={22} />
                   Tambah Kolam
@@ -461,7 +424,7 @@ const Homepage = () => {
                     window.userSession = null
                     navigate("/")
                   }}
-                  className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple font-semibold"
+                  className="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple font-semibold"
                 >
                   Logout
                 </button>
@@ -469,9 +432,8 @@ const Homepage = () => {
             </div>
           </div>
         </div>
-
         {/* Stats Cards */}
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 -mt-6 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 -mt-6 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div className="bg-gradient-to-br from-lime-400 to-green-500 rounded-2xl p-6 text-white shadow-xl animate-fadeInUp delay-100 card-hover">
               <div className="flex items-center justify-between">
@@ -521,10 +483,9 @@ const Homepage = () => {
             </div>
           </div>
         </div>
-
         {/* Add Pool Form */}
         {showAddForm && (
-          <div className="max-w-7xl mx-auto px-6 lg:px-8 mb-8">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 mb-8">
             <div className="bg-gradient-to-r from-lime-50 to-green-50 border-2 border-lime-200 rounded-2xl p-8 shadow-xl animate-fadeInUp">
               <div className="flex items-center gap-3 mb-6">
                 <div className="bg-lime-400 p-3 rounded-xl">
@@ -554,11 +515,11 @@ const Homepage = () => {
                   </p>
                 </div>
               </div>
-              <div className="flex gap-4 mt-8">
+              <div className="flex flex-col sm:flex-row gap-4 mt-8">
                 <button
                   onClick={handleAddPool}
                   disabled={apiLoading || !newPoolName.trim()}
-                  className="bg-gradient-to-r from-lime-400 to-green-500 hover:from-lime-500 hover:to-green-600 disabled:from-gray-300 disabled:to-gray-400 text-white px-8 py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple disabled:transform-none disabled:hover:scale-100"
+                  className="w-full sm:w-auto bg-gradient-to-r from-lime-400 to-green-500 hover:from-lime-500 hover:to-green-600 disabled:from-gray-300 disabled:to-gray-400 text-white px-8 py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple disabled:transform-none disabled:hover:scale-100"
                 >
                   {apiLoading ? "Menyimpan..." : "Simpan Kolam"}
                 </button>
@@ -568,7 +529,7 @@ const Homepage = () => {
                     setNewPoolName("")
                     setGeneratedCode("")
                   }}
-                  className="bg-gradient-to-r from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 text-white px-8 py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
+                  className="w-full sm:w-auto bg-gradient-to-r from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 text-white px-8 py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
                   Batal
                 </button>
@@ -576,24 +537,23 @@ const Homepage = () => {
             </div>
           </div>
         )}
-
         {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 pb-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pb-8">
           {/* Bulk Actions */}
           {selectedPools.length > 0 && (
             <div className="bg-gradient-to-r from-lime-100 to-green-100 border-2 border-lime-300 rounded-2xl p-6 mb-8 shadow-lg animate-fadeInUp">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
                 <div className="flex items-center gap-3">
                   <div className="bg-lime-400 p-2 rounded-lg">
                     <Users size={20} className="text-white" />
                   </div>
                   <span className="text-green-800 font-bold text-lg">{selectedPools.length} kolam dipilih</span>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                   <button
                     onClick={() => handleBulkStatusChange(true)}
                     disabled={apiLoading}
-                    className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-300 disabled:to-gray-400 text-white px-4 py-2 rounded-xl text-sm flex items-center gap-2 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
+                    className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-300 disabled:to-gray-400 text-white px-4 py-2 rounded-xl text-sm flex items-center justify-center sm:justify-start gap-2 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
                   >
                     <Power size={16} />
                     Aktifkan
@@ -601,7 +561,7 @@ const Homepage = () => {
                   <button
                     onClick={() => handleBulkStatusChange(false)}
                     disabled={apiLoading}
-                    className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:from-gray-300 disabled:to-gray-400 text-white px-4 py-2 rounded-xl text-sm flex items-center gap-2 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
+                    className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:from-gray-300 disabled:to-gray-400 text-white px-4 py-2 rounded-xl text-sm flex items-center justify-center sm:justify-start gap-2 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
                   >
                     <PowerOff size={16} />
                     Nonaktifkan
@@ -610,7 +570,6 @@ const Homepage = () => {
               </div>
             </div>
           )}
-
           {/* Pool Cards */}
           {pools.length === 0 ? (
             <div className="text-center py-16 animate-fadeInUp">
@@ -642,7 +601,6 @@ const Homepage = () => {
                   </span>
                 </label>
               </div>
-
               {/* Pool Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {pools.map((pool, index) => (
@@ -670,14 +628,11 @@ const Homepage = () => {
                           </div>
                         </div>
                         <span
-                          className={`px-4 py-2 rounded-xl text-sm font-bold status-badge ${getStatusColor(
-                            pool.status,
-                          )}`}
+                          className={`px-4 py-2 rounded-xl text-sm font-bold status-badge ${getStatusColor(pool.status)}`}
                         >
                           {getStatusText(pool.status)}
                         </span>
                       </div>
-
                       {/* Pool Information */}
                       <div className="bg-gray-50 rounded-xl p-4 mb-4">
                         <div className="grid grid-cols-2 gap-3 text-sm">
@@ -699,7 +654,6 @@ const Homepage = () => {
                           </div>
                         </div>
                       </div>
-
                       {/* Action Button */}
                       <div className="w-full">
                         <button

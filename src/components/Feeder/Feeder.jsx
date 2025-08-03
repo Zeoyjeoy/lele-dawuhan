@@ -19,7 +19,7 @@ import {
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../Sidebar/Sidebar"
 import "./Feeder.css"
-import imageSrc from '/assets/header.png';
+// import imageSrc from '/assets/header.png'; 
 
 const Feeder = () => {
   const [schedules, setSchedules] = useState([])
@@ -38,7 +38,6 @@ const Feeder = () => {
     time: "",
     code: "",
   })
-
   const navigate = useNavigate()
 
   // API Base URLs
@@ -49,11 +48,9 @@ const Feeder = () => {
   const getUserSpecificKey = (key) => {
     return userSession?.id ? `${key}_user_${userSession.id}` : key
   }
-
   const getPoolSpecificKey = (key, poolCode) => {
     return userSession?.id && poolCode ? `${key}_user_${userSession.id}_pool_${poolCode}` : key
   }
-
   const SCHEDULES_STORAGE_KEY = "feeder_schedules_data"
   const LAST_SYNC_KEY = "feeder_last_sync"
 
@@ -71,7 +68,6 @@ const Feeder = () => {
       console.error("Error saving schedules to localStorage:", error)
     }
   }
-
   const loadSchedulesFromStorage = () => {
     try {
       if (userSession?.id && selectedPool) {
@@ -91,7 +87,6 @@ const Feeder = () => {
     }
     return []
   }
-
   const getLastSyncTime = () => {
     try {
       if (userSession?.id && selectedPool) {
@@ -181,21 +176,17 @@ const Feeder = () => {
       showNotification("Session tidak valid atau kolam belum dipilih", "error")
       return
     }
-
     try {
       setApiLoading(true)
       const scheduleDateTime = `${newSchedule.date}T${newSchedule.time}:00`
       const scheduleCode = generateScheduleCode()
-
       // Request data sesuai dengan format yang diharapkan backend
       const requestData = {
         code: scheduleCode,
         iduser: userSession.id.toString(),
         schedule: scheduleDateTime,
       }
-
       console.log(`Adding schedule for pool ${selectedPool} with data:`, requestData)
-
       const response = await fetch(`${SCHEDULE_API_BASE}/save`, {
         method: "POST",
         headers: {
@@ -204,9 +195,7 @@ const Feeder = () => {
         },
         body: JSON.stringify(requestData),
       })
-
       console.log("Add schedule response status:", response.status)
-
       if (!response.ok) {
         const errorText = await response.text()
         console.log("Error response:", errorText)
@@ -215,10 +204,8 @@ const Feeder = () => {
         }
         throw new Error(`HTTP error! status: ${response.status} - ${errorText}`)
       }
-
       const data = await response.json()
       console.log("Add schedule response data:", data)
-
       if (data.status === "201 CREATED" || data.status === "200 OK") {
         // Use the actual response data from API
         const newScheduleItem = {
@@ -262,7 +249,6 @@ const Feeder = () => {
     const schedule = new Date(scheduleTime)
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const scheduleDate = new Date(schedule.getFullYear(), schedule.getMonth(), schedule.getDate())
-
     if (schedule < now) {
       return { status: "completed", text: "Selesai", color: "bg-gray-100 text-gray-600 border-gray-200" }
     } else if (scheduleDate.getTime() === today.getTime()) {
@@ -277,23 +263,19 @@ const Feeder = () => {
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
-
     const todaySchedules = schedules.filter((schedule) => {
       const scheduleDate = new Date(schedule.schedule)
       const scheduleDateOnly = new Date(scheduleDate.getFullYear(), scheduleDate.getMonth(), scheduleDate.getDate())
       return scheduleDateOnly.getTime() === today.getTime()
     })
-
     const weekSchedules = schedules.filter((schedule) => {
       const scheduleDate = new Date(schedule.schedule)
       return scheduleDate >= now && scheduleDate <= weekFromNow
     })
-
     const upcomingSchedules = schedules.filter((schedule) => {
       const scheduleDate = new Date(schedule.schedule)
       return scheduleDate > now
     })
-
     return {
       total: schedules.length,
       today: todaySchedules.length,
@@ -337,7 +319,6 @@ const Feeder = () => {
     <div className="min-h-screen bg-gradient-to-br from-lime-50 via-green-50 to-emerald-50 flex">
       {/* Sidebar */}
       {sidebarVisible && <Sidebar />}
-
       {/* Main Content */}
       <div className="flex-grow">
         {/* Enhanced Notification */}
@@ -395,7 +376,6 @@ const Feeder = () => {
             </div>
           </div>
         )}
-
         {/* Loading Overlay */}
         {apiLoading && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 backdrop-blur-sm">
@@ -410,20 +390,13 @@ const Feeder = () => {
             </div>
           </div>
         )}
-
         {/* Header */}
         <div
-          className="shadow-xl relative overflow-hidden"
-          style={{
-            backgroundImage: `url(${imageSrc})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-          }}
+          className="shadow-xl relative overflow-hidden bg-green-900" // Mengubah background menjadi hijau gelap
         >
-          <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
-            <div className="flex justify-between items-center py-8">
-              <div className="flex items-center gap-6 animate-slideInFromLeft">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 relative z-10">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-8 gap-4 sm:gap-0">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 animate-slideInFromLeft">
                 <button
                   onClick={() => navigate("/homepage")}
                   className="p-3 hover:bg-white/20 rounded-xl transition-all duration-300 transform hover:scale-110"
@@ -432,23 +405,24 @@ const Feeder = () => {
                 </button>
                 <div>
                   <h1
-                    className="text-4xl font-bold text-white mb-2 drop-shadow-2xl flex items-center gap-3"
-                    style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.5)" }}
+                    className="text-4xl font-bold text-white mb-2 flex items-center gap-3" // Menghapus text-shadow dan drop-shadow
                   >
                     <Clock size={36} />
                     Jadwal Pemberian Pakan
                   </h1>
-                  <p className="text-white text-lg bg-black/20 px-3 py-1 rounded-lg backdrop-blur-sm inline-block mt-1">
+                  <p
+                    className="text-white text-lg inline-block mt-1" // Menghapus bg-black/20 dan backdrop-blur-sm
+                  >
                     Kelola jadwal pemberian pakan otomatis untuk kolam budidaya
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-4 animate-slideInFromRight">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full sm:w-auto animate-slideInFromRight">
                 {/* Pool Selector */}
                 <select
                   value={selectedPool}
                   onChange={(e) => setSelectedPool(e.target.value)}
-                  className="px-4 py-3 border-2 border-white/30 rounded-xl focus:outline-none focus:ring-4 focus:ring-white/20 focus:border-white/50 bg-white/90 backdrop-blur-sm font-semibold text-gray-700 transition-all duration-300"
+                  className="w-full sm:w-auto px-4 py-3 border-2 border-white/30 rounded-xl focus:outline-none focus:ring-4 focus:ring-white/20 focus:border-white/50 bg-white/90 backdrop-blur-sm font-semibold text-gray-700 transition-all duration-300"
                 >
                   <option value="">Pilih Kolam</option>
                   {pools.map((pool) => (
@@ -459,7 +433,7 @@ const Feeder = () => {
                 </select>
                 <button
                   onClick={() => setShowAddForm(!showAddForm)}
-                  className="bg-white hover:bg-lime-50 text-green-700 px-6 py-3 rounded-xl flex items-center gap-3 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple font-semibold"
+                  className="w-full sm:w-auto bg-white hover:bg-lime-50 text-green-700 px-6 py-3 rounded-xl flex items-center justify-center sm:justify-start gap-3 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple font-semibold"
                 >
                   <Plus size={22} />
                   Tambah Jadwal
@@ -468,10 +442,9 @@ const Feeder = () => {
             </div>
           </div>
         </div>
-
         {/* User Information Card */}
         {userSession && selectedPoolData && (
-          <div className="max-w-7xl mx-auto px-6 lg:px-8 -mt-4 relative z-10">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 -mt-4 relative z-10">
             <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl shadow-xl border-2 border-blue-200 p-6 mb-6">
               <div className="flex items-center gap-4 mb-4">
                 <div className="bg-blue-500 p-3 rounded-xl">
@@ -514,9 +487,8 @@ const Feeder = () => {
             </div>
           </div>
         )}
-
         {/* Stats Cards */}
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div className="bg-gradient-to-br from-lime-400 to-green-500 rounded-2xl p-6 text-white shadow-xl animate-fadeInUp delay-100 card-hover">
               <div className="flex items-center justify-between">
@@ -564,10 +536,9 @@ const Feeder = () => {
             </div>
           </div>
         </div>
-
         {/* Add Schedule Form */}
         {showAddForm && (
-          <div className="max-w-7xl mx-auto px-6 lg:px-8 mb-8">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 mb-8">
             <div className="bg-gradient-to-r from-lime-50 to-green-50 border-2 border-lime-200 rounded-2xl p-8 shadow-xl animate-fadeInUp">
               <div className="flex items-center gap-3 mb-6">
                 <div className="bg-lime-400 p-3 rounded-xl">
@@ -597,11 +568,11 @@ const Feeder = () => {
                   />
                 </div>
               </div>
-              <div className="flex gap-4 mt-8">
+              <div className="flex flex-col sm:flex-row gap-4 mt-8">
                 <button
                   onClick={handleAddSchedule}
                   disabled={apiLoading || !newSchedule.date || !newSchedule.time || !selectedPool}
-                  className="bg-gradient-to-r from-lime-400 to-green-500 hover:from-lime-500 hover:to-green-600 disabled:from-gray-300 disabled:to-gray-400 text-white px-8 py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple disabled:transform-none disabled:hover:scale-100"
+                  className="w-full sm:w-auto bg-gradient-to-r from-lime-400 to-green-500 hover:from-lime-500 hover:to-green-600 disabled:from-gray-300 disabled:to-gray-400 text-white px-8 py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple disabled:transform-none disabled:hover:scale-100"
                 >
                   {apiLoading ? "Menyimpan..." : "Simpan Jadwal"}
                 </button>
@@ -610,7 +581,7 @@ const Feeder = () => {
                     setShowAddForm(false)
                     setNewSchedule({ date: "", time: "", code: "" })
                   }}
-                  className="bg-gradient-to-r from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 text-white px-8 py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
+                  className="w-full sm:w-auto bg-gradient-to-r from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 text-white px-8 py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
                   Batal
                 </button>
@@ -618,9 +589,8 @@ const Feeder = () => {
             </div>
           </div>
         )}
-
         {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 pb-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pb-8">
           {/* Refresh Button */}
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-800">Daftar Jadwal Pakan</h2>
@@ -633,7 +603,6 @@ const Feeder = () => {
               {loading ? "Memuat..." : "Refresh"}
             </button>
           </div>
-
           {/* Schedule Cards */}
           {schedules.length === 0 ? (
             <div className="text-center py-16 animate-fadeInUp">
@@ -699,7 +668,6 @@ const Feeder = () => {
                           {statusInfo.text}
                         </span>
                       </div>
-
                       {/* Schedule Information */}
                       <div className="bg-gray-50 rounded-xl p-4 mb-4">
                         <div className="grid grid-cols-1 gap-3 text-sm">

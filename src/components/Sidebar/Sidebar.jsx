@@ -1,14 +1,12 @@
 "use client"
-
 import { useState, useEffect } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { Home, Cpu, Zap, Activity, Search, Menu, X, XCircle, Hamburger } from 'lucide-react'
+import { Home, Cpu, Zap, Activity, Search, Menu, X, XCircle, SandwichIcon as Hamburger } from 'lucide-react'
 import "./Sidebar.css"
 
 // Animated Stars Component
 const AnimatedStars = () => {
   const [stars, setStars] = useState([])
-
   useEffect(() => {
     const generateStars = () => {
       const newStars = Array.from({ length: 50 }, (_, i) => ({
@@ -21,7 +19,6 @@ const AnimatedStars = () => {
       }))
       setStars(newStars)
     }
-
     generateStars()
   }, [])
 
@@ -41,7 +38,6 @@ const AnimatedStars = () => {
           }}
         />
       ))}
-
       {/* Shooting stars */}
       <div className="shooting-star shooting-star-1" />
       <div className="shooting-star shooting-star-2" />
@@ -54,6 +50,7 @@ const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [userSession, setUserSession] = useState(null)
+  const [isMobileView, setIsMobileView] = useState(false) // New state for mobile view
   const location = useLocation()
 
   // Get user session
@@ -62,6 +59,22 @@ const Sidebar = () => {
     if (session) {
       setUserSession(session)
     }
+  }, [])
+
+  // Detect mobile view
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth <= 768) // Assuming 768px as mobile breakpoint
+    }
+
+    // Set initial state
+    handleResize()
+
+    // Add event listener
+    window.addEventListener("resize", handleResize)
+
+    // Clean up
+    return () => window.removeEventListener("resize", handleResize)
   }, [])
 
   const menuItems = [
@@ -94,7 +107,7 @@ const Sidebar = () => {
       name: "Feeder Schedule",
       link: "/feeder",
       icon: Hamburger,
-      description: "Kontrol Feeder IoT", 
+      description: "Kontrol Feeder IoT",
     },
   ]
 
@@ -117,22 +130,23 @@ const Sidebar = () => {
     setSearchQuery(e.target.value)
   }
 
+  // Determine if content should be visible (not collapsed and not mobile view)
+  const isContentVisible = !isCollapsed && !isMobileView
+
   return (
-    <aside className={`sidebar ${isCollapsed ? "collapsed" : ""}`}>
+    <aside className={`sidebar ${isCollapsed || isMobileView ? "collapsed" : ""}`}>
       {/* Animated Stars Background */}
       <AnimatedStars />
-
       {/* Additional Animated Background Elements */}
       <div className="background-elements">
         <div className="floating-element floating-element-1"></div>
         <div className="floating-element floating-element-2"></div>
         <div className="floating-element floating-element-3"></div>
       </div>
-
       {/* Header */}
       <div className="sidebar-header">
         <div className="header-content">
-          {!isCollapsed && (
+          {isContentVisible && (
             <div className="logo-section">
               <div className="logo-icon">
                 <Activity className="logo-activity-icon" />
@@ -144,20 +158,18 @@ const Sidebar = () => {
             </div>
           )}
           <button onClick={() => setIsCollapsed(!isCollapsed)} className="collapse-button">
-            {isCollapsed ? <Menu className="collapse-icon" /> : <X className="collapse-icon" />}
+            {isCollapsed || isMobileView ? <Menu className="collapse-icon" /> : <X className="collapse-icon" />}
           </button>
         </div>
       </div>
-
       {/* Enhanced Search Bar */}
-      {!isCollapsed && (
+      {isContentVisible && (
         <div className="search-section">
           <div className="search-container">
             {/* Search Icon */}
             <div className="search-icon-container">
               <Search className={`search-icon ${isSearchFocused || searchQuery ? "focused" : ""}`} />
             </div>
-
             {/* Search Input */}
             <input
               type="text"
@@ -169,7 +181,6 @@ const Sidebar = () => {
               placeholder="Cari menu atau fitur..."
               autoComplete="off"
             />
-
             {/* Clear Search Button */}
             {searchQuery && (
               <button onClick={clearSearch} className="clear-search-button" type="button">
@@ -177,7 +188,6 @@ const Sidebar = () => {
               </button>
             )}
           </div>
-
           {/* Search Results Counter */}
           {searchQuery && (
             <div className="search-results-counter">
@@ -188,14 +198,12 @@ const Sidebar = () => {
           )}
         </div>
       )}
-
       {/* Navigation Menu */}
       <nav className="navigation-menu">
         {filteredMenuItems.length > 0
           ? filteredMenuItems.map((item, index) => {
               const Icon = item.icon
               const isActive = isActiveLink(item.link)
-
               return (
                 <Link
                   key={item.name}
@@ -206,8 +214,7 @@ const Sidebar = () => {
                   <div className={`menu-icon-container ${isActive ? "active" : ""}`}>
                     <Icon className="menu-icon" />
                   </div>
-
-                  {!isCollapsed && (
+                  {isContentVisible && (
                     <div className="menu-content">
                       <div className="menu-header">
                         <span className="menu-title">
@@ -244,13 +251,12 @@ const Sidebar = () => {
                       </p>
                     </div>
                   )}
-
                   {/* Hover Effect */}
                   <div className="menu-hover-effect"></div>
                 </Link>
               )
             })
-          : !isCollapsed && (
+          : isContentVisible && (
               <div className="no-results">
                 <Search className="no-results-icon" />
                 <p className="no-results-title">Tidak ada hasil ditemukan</p>
@@ -263,9 +269,8 @@ const Sidebar = () => {
               </div>
             )}
       </nav>
-
       {/* Footer */}
-      {!isCollapsed && (
+      {isContentVisible && (
         <div className="sidebar-footer">
           <div className="footer-content">
             <div className="status-indicator">
@@ -280,7 +285,6 @@ const Sidebar = () => {
           </div>
         </div>
       )}
-
       {/* Glowing Edge Effect */}
       <div className="glowing-edge"></div>
     </aside>
