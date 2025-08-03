@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { Home, Cpu, Zap, Activity, Search, Menu, X, XCircle, SandwichIcon as Hamburger } from 'lucide-react'
+import { Home, Cpu, Zap, Activity, Search, Menu, X, XCircle, SandwichIcon as Hamburger } from "lucide-react"
 import "./Sidebar.css"
 
 // Animated Stars Component
@@ -47,10 +47,10 @@ const AnimatedStars = () => {
 
 const Sidebar = () => {
   const [searchQuery, setSearchQuery] = useState("")
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true) // Controls open/closed state
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [userSession, setUserSession] = useState(null)
-  const [isMobileView, setIsMobileView] = useState(false) // New state for mobile view
+  const [isMobileView, setIsMobileView] = useState(false) // Detects mobile breakpoint
   const location = useLocation()
 
   // Get user session
@@ -61,20 +61,22 @@ const Sidebar = () => {
     }
   }, [])
 
-  // Detect mobile view
+  // Detect mobile view and set initial sidebar state
   useEffect(() => {
     const handleResize = () => {
-      setIsMobileView(window.innerWidth <= 768) // Assuming 768px as mobile breakpoint
+      const mobile = window.innerWidth <= 768 // Assuming 768px as mobile breakpoint
+      setIsMobileView(mobile)
+      // On mobile, default to closed (icons only). On desktop, default to open.
+      if (mobile) {
+        setIsSidebarOpen(false)
+      } else {
+        setIsSidebarOpen(true)
+      }
     }
 
-    // Set initial state
-    handleResize()
-
-    // Add event listener
-    window.addEventListener("resize", handleResize)
-
-    // Clean up
-    return () => window.removeEventListener("resize", handleResize)
+    handleResize() // Set initial state
+    window.addEventListener("resize", handleResize) // Add event listener
+    return () => window.removeEventListener("resize", handleResize) // Clean up
   }, [])
 
   const menuItems = [
@@ -130,164 +132,169 @@ const Sidebar = () => {
     setSearchQuery(e.target.value)
   }
 
-  // Determine if content should be visible (not collapsed and not mobile view)
-  const isContentVisible = !isCollapsed && !isMobileView
+  // Content is visible if the sidebar is open (regardless of mobile/desktop)
+  const isContentVisible = isSidebarOpen
 
   return (
-    <aside className={`sidebar ${isCollapsed || isMobileView ? "collapsed" : ""}`}>
-      {/* Animated Stars Background */}
-      <AnimatedStars />
-      {/* Additional Animated Background Elements */}
-      <div className="background-elements">
-        <div className="floating-element floating-element-1"></div>
-        <div className="floating-element floating-element-2"></div>
-        <div className="floating-element floating-element-3"></div>
-      </div>
-      {/* Header */}
-      <div className="sidebar-header">
-        <div className="header-content">
-          {isContentVisible && (
-            <div className="logo-section">
-              <div className="logo-icon">
-                <Activity className="logo-activity-icon" />
-              </div>
-              <div className="logo-text">
-                <h1 className="logo-title">AquaMonitor</h1>
-                <p className="logo-subtitle">IoT Dashboard</p>
-              </div>
-            </div>
-          )}
-          <button onClick={() => setIsCollapsed(!isCollapsed)} className="collapse-button">
-            {isCollapsed || isMobileView ? <Menu className="collapse-icon" /> : <X className="collapse-icon" />}
-          </button>
+    <>
+      <aside className={`sidebar ${isSidebarOpen ? "open" : "closed"}`}>
+        {/* Animated Stars Background */}
+        <AnimatedStars />
+        {/* Additional Animated Background Elements */}
+        <div className="background-elements">
+          <div className="floating-element floating-element-1"></div>
+          <div className="floating-element floating-element-2"></div>
+          <div className="floating-element floating-element-3"></div>
         </div>
-      </div>
-      {/* Enhanced Search Bar */}
-      {isContentVisible && (
-        <div className="search-section">
-          <div className="search-container">
-            {/* Search Icon */}
-            <div className="search-icon-container">
-              <Search className={`search-icon ${isSearchFocused || searchQuery ? "focused" : ""}`} />
+        {/* Header */}
+        <div className="sidebar-header">
+          <div className="header-content">
+            {isContentVisible && (
+              <div className="logo-section">
+                <div className="logo-icon">
+                  <Activity className="logo-activity-icon" />
+                </div>
+                <div className="logo-text">
+                  <h1 className="logo-title">AquaMonitor</h1>
+                  <p className="logo-subtitle">IoT Dashboard</p>
+                </div>
+              </div>
+            )}
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="collapse-button">
+              {isSidebarOpen ? <X className="collapse-icon" /> : <Menu className="collapse-icon" />}
+            </button>
+          </div>
+        </div>
+        {/* Enhanced Search Bar */}
+        {isContentVisible && (
+          <div className="search-section">
+            <div className="search-container">
+              {/* Search Icon */}
+              <div className="search-icon-container">
+                <Search className={`search-icon ${isSearchFocused || searchQuery ? "focused" : ""}`} />
+              </div>
+              {/* Search Input */}
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
+                className="search-input"
+                placeholder="Cari menu atau fitur..."
+                autoComplete="off"
+              />
+              {/* Clear Search Button */}
+              {searchQuery && (
+                <button onClick={clearSearch} className="clear-search-button" type="button">
+                  <XCircle className="clear-search-icon" />
+                </button>
+              )}
             </div>
-            {/* Search Input */}
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => setIsSearchFocused(false)}
-              className="search-input"
-              placeholder="Cari menu atau fitur..."
-              autoComplete="off"
-            />
-            {/* Clear Search Button */}
+            {/* Search Results Counter */}
             {searchQuery && (
-              <button onClick={clearSearch} className="clear-search-button" type="button">
-                <XCircle className="clear-search-icon" />
-              </button>
+              <div className="search-results-counter">
+                <span className="search-results-text">
+                  {filteredMenuItems.length > 0 ? `${filteredMenuItems.length} hasil ditemukan` : "Tidak ada hasil"}
+                </span>
+              </div>
             )}
           </div>
-          {/* Search Results Counter */}
-          {searchQuery && (
-            <div className="search-results-counter">
-              <span className="search-results-text">
-                {filteredMenuItems.length > 0 ? `${filteredMenuItems.length} hasil ditemukan` : "Tidak ada hasil"}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
-      {/* Navigation Menu */}
-      <nav className="navigation-menu">
-        {filteredMenuItems.length > 0
-          ? filteredMenuItems.map((item, index) => {
-              const Icon = item.icon
-              const isActive = isActiveLink(item.link)
-              return (
-                <Link
-                  key={item.name}
-                  to={item.link}
-                  className={`menu-item ${isActive ? "active" : ""}`}
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <div className={`menu-icon-container ${isActive ? "active" : ""}`}>
-                    <Icon className="menu-icon" />
-                  </div>
-                  {isContentVisible && (
-                    <div className="menu-content">
-                      <div className="menu-header">
-                        <span className="menu-title">
-                          {/* Highlight search term */}
+        )}
+        {/* Navigation Menu */}
+        <nav className="navigation-menu">
+          {filteredMenuItems.length > 0
+            ? filteredMenuItems.map((item, index) => {
+                const Icon = item.icon
+                const isActive = isActiveLink(item.link)
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.link}
+                    className={`menu-item ${isActive ? "active" : ""}`}
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <div className={`menu-icon-container ${isActive ? "active" : ""}`}>
+                      <Icon className="menu-icon" />
+                    </div>
+                    {isContentVisible && (
+                      <div className="menu-content">
+                        <div className="menu-header">
+                          <span className="menu-title">
+                            {/* Highlight search term */}
+                            {searchQuery ? (
+                              <span
+                                dangerouslySetInnerHTML={{
+                                  __html: item.name.replace(
+                                    new RegExp(`(${searchQuery})`, "gi"),
+                                    '<mark class="search-highlight">$1</mark>',
+                                  ),
+                                }}
+                              />
+                            ) : (
+                              item.name
+                            )}
+                          </span>
+                          {isActive && <div className="active-indicator"></div>}
+                        </div>
+                        <p className={`menu-description ${isActive ? "active" : ""}`}>
+                          {/* Highlight search term in description */}
                           {searchQuery ? (
                             <span
                               dangerouslySetInnerHTML={{
-                                __html: item.name.replace(
+                                __html: item.description.replace(
                                   new RegExp(`(${searchQuery})`, "gi"),
                                   '<mark class="search-highlight">$1</mark>',
                                 ),
                               }}
                             />
                           ) : (
-                            item.name
+                            item.description
                           )}
-                        </span>
-                        {isActive && <div className="active-indicator"></div>}
+                        </p>
                       </div>
-                      <p className={`menu-description ${isActive ? "active" : ""}`}>
-                        {/* Highlight search term in description */}
-                        {searchQuery ? (
-                          <span
-                            dangerouslySetInnerHTML={{
-                              __html: item.description.replace(
-                                new RegExp(`(${searchQuery})`, "gi"),
-                                '<mark class="search-highlight">$1</mark>',
-                              ),
-                            }}
-                          />
-                        ) : (
-                          item.description
-                        )}
-                      </p>
-                    </div>
+                    )}
+                    {/* Hover Effect */}
+                    <div className="menu-hover-effect"></div>
+                  </Link>
+                )
+              })
+            : isContentVisible && (
+                <div className="no-results">
+                  <Search className="no-results-icon" />
+                  <p className="no-results-title">Tidak ada hasil ditemukan</p>
+                  <p className="no-results-subtitle">
+                    {searchQuery ? `untuk "${searchQuery}"` : "Coba kata kunci lain"}
+                  </p>
+                  {searchQuery && (
+                    <button onClick={clearSearch} className="clear-search-results-button">
+                      Hapus pencarian
+                    </button>
                   )}
-                  {/* Hover Effect */}
-                  <div className="menu-hover-effect"></div>
-                </Link>
-              )
-            })
-          : isContentVisible && (
-              <div className="no-results">
-                <Search className="no-results-icon" />
-                <p className="no-results-title">Tidak ada hasil ditemukan</p>
-                <p className="no-results-subtitle">{searchQuery ? `untuk "${searchQuery}"` : "Coba kata kunci lain"}</p>
-                {searchQuery && (
-                  <button onClick={clearSearch} className="clear-search-results-button">
-                    Hapus pencarian
-                  </button>
-                )}
+                </div>
+              )}
+        </nav>
+        {/* Footer */}
+        {isContentVisible && (
+          <div className="sidebar-footer">
+            <div className="footer-content">
+              <div className="status-indicator">
+                <div className="status-dot"></div>
               </div>
-            )}
-      </nav>
-      {/* Footer */}
-      {isContentVisible && (
-        <div className="sidebar-footer">
-          <div className="footer-content">
-            <div className="status-indicator">
-              <div className="status-dot"></div>
-            </div>
-            <div className="status-info">
-              <p className="status-text">Status: Online</p>
-              <p className="user-info">
-                User <span className="username">{userSession?.username || "Guest"}</span>
-              </p>
+              <div className="status-info">
+                <p className="status-text">Status: Online</p>
+                <p className="user-info">
+                  User <span className="username">{userSession?.username || "Guest"}</span>
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-      {/* Glowing Edge Effect */}
-      <div className="glowing-edge"></div>
-    </aside>
+        )}
+        {/* Glowing Edge Effect */}
+        <div className="glowing-edge"></div>
+      </aside>
+      {isMobileView && isSidebarOpen && <div className="sidebar-overlay" onClick={() => setIsSidebarOpen(false)}></div>}
+    </>
   )
 }
 

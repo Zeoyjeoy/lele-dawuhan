@@ -15,6 +15,7 @@
     transform: translateY(0);
   }
 }
+
 @keyframes slideInFromRight {
   from {
     opacity: 0;
@@ -25,6 +26,7 @@
     transform: translateX(0);
   }
 }
+
 @keyframes slideInFromLeft {
   from {
     opacity: 0;
@@ -35,6 +37,7 @@
     transform: translateX(0);
   }
 }
+
 @keyframes bounce {
   0%,
   20%,
@@ -54,6 +57,7 @@
     transform: translate3d(0, -4px, 0);
   }
 }
+
 @keyframes pulse {
   0%,
   100% {
@@ -63,6 +67,7 @@
     opacity: 0.5;
   }
 }
+
 @keyframes spin {
   from {
     transform: rotate(0deg);
@@ -76,18 +81,23 @@
 .animate-fadeInUp {
   animation: fadeInUp 0.6s ease-out forwards;
 }
+
 .animate-slideInFromRight {
   animation: slideInFromRight 0.5s ease-out forwards;
 }
+
 .animate-slideInFromLeft {
   animation: slideInFromLeft 0.5s ease-out forwards;
 }
+
 .animate-bounce {
   animation: bounce 2s infinite;
 }
+
 .animate-pulse {
   animation: pulse 2s infinite;
 }
+
 .animate-spin {
   animation: spin 1s linear infinite;
 }
@@ -96,12 +106,15 @@
 .delay-100 {
   animation-delay: 100ms;
 }
+
 .delay-200 {
   animation-delay: 200ms;
 }
+
 .delay-300 {
   animation-delay: 300ms;
 }
+
 .delay-400 {
   animation-delay: 400ms;
 }
@@ -110,6 +123,7 @@
 .card-hover {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .card-hover:hover {
   transform: translateY(-8px) scale(1.02);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
@@ -120,6 +134,7 @@
   position: relative;
   overflow: hidden;
 }
+
 .btn-ripple::before {
   content: "";
   position: absolute;
@@ -132,6 +147,7 @@
   transform: translate(-50%, -50%);
   transition: width 0.6s, height 0.6s;
 }
+
 .btn-ripple:active::before {
   width: 300px;
   height: 300px;
@@ -142,6 +158,7 @@
   position: relative;
   overflow: hidden;
 }
+
 .status-badge::after {
   content: "";
   position: absolute;
@@ -152,6 +169,7 @@
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
   transition: left 0.5s;
 }
+
 .status-badge:hover::after {
   left: 100%;
 }
@@ -169,6 +187,7 @@
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
+
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -182,6 +201,7 @@
 .connection-pulse {
   animation: connectionPulse 2s infinite;
 }
+
 @keyframes connectionPulse {
   0%,
   100% {
@@ -197,6 +217,7 @@
   .feeder-container {
     padding: 1rem;
   }
+
   .card-hover:hover {
     transform: translateY(-4px) scale(1.01);
   }
@@ -220,6 +241,7 @@
   .animate-spin {
     animation: none !important;
   }
+
   .card-hover {
     transform: none !important;
     box-shadow: none !important;
@@ -242,6 +264,7 @@
   .card-hover {
     border: 2px solid #000;
   }
+
   .btn-ripple {
     border: 2px solid #000;
   }

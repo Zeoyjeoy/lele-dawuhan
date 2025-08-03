@@ -1,5 +1,4 @@
 "use client"
-
 import { useState, useEffect, useRef } from "react"
 import {
   ArrowLeft,
@@ -21,7 +20,7 @@ import { useNavigate } from "react-router-dom"
 import html2canvas from "html2canvas"
 import Sidebar from "../Sidebar/Sidebar"
 import "./Sensor.css"
-import imageSrc from '/assets/header.png';
+// import imageSrc from '/assets/header.png'; // Remove this line as background will be solid color
 
 // Enhanced Chart Component with detailed data display
 const SimpleLineChart = ({ data, dataKey, color, title, unit = "", chartRef }) => {
@@ -282,7 +281,6 @@ const ComprehensiveDataTable = ({ data }) => {
           </tbody>
         </table>
       </div>
-
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-6 pt-4 border-t-2 border-lime-100">
@@ -381,7 +379,6 @@ const Sensor = () => {
 
   // Chart refs for image download
   const chartRefs = useRef({})
-
   const navigate = useNavigate()
 
   // API Base URLs
@@ -707,22 +704,15 @@ const Sensor = () => {
     <div className="min-h-screen bg-gradient-to-br from-lime-50 via-green-50 to-emerald-50 flex">
       {/* Sidebar */}
       {sidebarVisible && <Sidebar />}
-
       {/* Main Content */}
       <div className="flex-grow">
         {/* Header */}
         <div
-          className="shadow-xl relative overflow-hidden"
-          style={{
-            backgroundImage: `url(${imageSrc})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-          }}
+          className="shadow-xl relative overflow-hidden bg-green-900" // Changed to solid dark green
         >
-          <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
-            <div className="flex justify-between items-center py-8">
-              <div className="flex items-center gap-6 animate-slideInFromLeft">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 relative z-10">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-8 gap-4 sm:gap-0">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 animate-slideInFromLeft">
                 <button
                   onClick={() => navigate("/homepage")}
                   className="p-3 hover:bg-white/20 rounded-xl transition-all duration-300 transform hover:scale-110"
@@ -731,22 +721,23 @@ const Sensor = () => {
                 </button>
                 <div>
                   <h1
-                    className="text-4xl font-bold text-white mb-2 drop-shadow-2xl flex items-center gap-3"
-                    style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.5)" }}
+                    className="text-4xl font-bold text-white mb-2 flex items-center gap-3" // Ensured text-white and removed text-shadow
                   >
                     <Activity size={36} />
                     Monitoring Sensor
                   </h1>
-                  <p className="text-white text-lg bg-black/20 px-3 py-1 rounded-lg backdrop-blur-sm inline-block mt-1">
+                  <p
+                    className="text-white text-lg inline-block mt-1" // Ensured text-white and removed bg-black/20
+                  >
                     Pantau data sensor kolam budidaya secara real-time (Update per jam)
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-4 animate-slideInFromRight">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto animate-slideInFromRight">
                 <select
                   value={selectedPool}
                   onChange={(e) => handlePoolChange(e.target.value)}
-                  className="px-4 py-3 border-2 border-white/30 rounded-xl focus:outline-none focus:ring-4 focus:ring-white/20 focus:border-white/50 bg-white/90 backdrop-blur-sm font-semibold text-gray-700 transition-all duration-300"
+                  className="w-full sm:w-auto px-4 py-3 border-2 border-white/30 rounded-xl focus:outline-none focus:ring-4 focus:ring-white/20 focus:border-white/50 bg-white/90 backdrop-blur-sm font-semibold text-gray-700 transition-all duration-300"
                 >
                   <option value="">Pilih Kolam</option>
                   {pools.map((pool) => (
@@ -758,7 +749,7 @@ const Sensor = () => {
                 <button
                   onClick={handleRefresh}
                   disabled={refreshing}
-                  className="bg-white hover:bg-lime-50 text-green-700 px-6 py-3 rounded-xl flex items-center gap-3 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple font-semibold"
+                  className="w-full sm:w-auto bg-white hover:bg-lime-50 text-green-700 px-6 py-3 rounded-xl flex items-center justify-center sm:justify-start gap-3 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple font-semibold"
                 >
                   <RefreshCw size={20} className={refreshing ? "animate-spin" : ""} />
                   Refresh
@@ -767,9 +758,8 @@ const Sensor = () => {
             </div>
           </div>
         </div>
-
         {/* Tab Navigation */}
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 -mt-4 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 -mt-4 relative z-10">
           <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-2">
             <nav className="flex space-x-2">
               <button
@@ -797,8 +787,7 @@ const Sensor = () => {
             </nav>
           </div>
         </div>
-
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
           {/* Real-time Data Tab */}
           {activeTab === "realtime" && (
             <div className="tab-content">
@@ -846,7 +835,6 @@ const Sensor = () => {
                       </div>
                     </div>
                   </div>
-
                   {/* Battery Metrics - ENHANCED */}
                   <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 sensor-card animate-fadeInUp delay-200">
                     <div className="flex items-center justify-between mb-6">
@@ -892,7 +880,6 @@ const Sensor = () => {
                       </div>
                     </div>
                   </div>
-
                   {/* Load Metrics */}
                   <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 sensor-card animate-fadeInUp delay-300">
                     <div className="flex items-center justify-between mb-6">
@@ -922,7 +909,6 @@ const Sensor = () => {
                       </div>
                     </div>
                   </div>
-
                   {/* Environment Metrics */}
                   <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 sensor-card animate-fadeInUp delay-400">
                     <div className="flex items-center justify-between mb-6">
@@ -946,7 +932,6 @@ const Sensor = () => {
                       </div>
                     </div>
                   </div>
-
                   {/* Bioflok Water Quality */}
                   <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 sensor-card animate-fadeInUp delay-500">
                     <div className="flex items-center justify-between mb-6">
@@ -978,7 +963,6 @@ const Sensor = () => {
                       </div>
                     </div>
                   </div>
-
                   {/* System Status Summary */}
                   <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 sensor-card animate-fadeInUp delay-600">
                     <div className="flex items-center justify-between mb-6">
@@ -1006,7 +990,6 @@ const Sensor = () => {
               )}
             </div>
           )}
-
           {/* Historical Data Tab */}
           {activeTab === "history" && (
             <div className="tab-content">
@@ -1038,7 +1021,6 @@ const Sensor = () => {
                     onApply={applyDateFilter}
                     onReset={resetDateFilter}
                   />
-
                   {/* Quick Date Filters */}
                   <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-6 animate-fadeInUp">
                     <h3 className="text-lg font-bold text-gray-800 mb-4">Filter Cepat</h3>
@@ -1063,7 +1045,6 @@ const Sensor = () => {
                       </button>
                     </div>
                   </div>
-
                   {/* Download Controls */}
                   <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-6 animate-fadeInUp">
                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -1080,7 +1061,6 @@ const Sensor = () => {
                       </button>
                     </div>
                   </div>
-
                   {/* View Toggle */}
                   <div className="flex items-center justify-between animate-fadeInUp">
                     <h2 className="text-2xl font-bold text-gray-800 gradient-text">
@@ -1094,7 +1074,6 @@ const Sensor = () => {
                       {showAllDetails ? "Show Charts" : "Show All Details"}
                     </button>
                   </div>
-
                   {showAllDetails ? (
                     <ComprehensiveDataTable data={filteredData} />
                   ) : (
@@ -1129,7 +1108,6 @@ const Sensor = () => {
                           />
                         </div>
                       </div>
-
                       {/* Temperature Charts */}
                       <div
                         className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 animate-fadeInUp delay-200"
@@ -1162,7 +1140,6 @@ const Sensor = () => {
                           />
                         </div>
                       </div>
-
                       {/* Water Quality Charts */}
                       <div
                         className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 animate-fadeInUp delay-300"
@@ -1186,7 +1163,6 @@ const Sensor = () => {
                           />
                         </div>
                       </div>
-
                       {/* Battery Enhanced Charts */}
                       <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 animate-fadeInUp delay-400">
                         <h3 className="text-2xl font-bold text-gray-800 mb-6 gradient-text">
@@ -1209,7 +1185,6 @@ const Sensor = () => {
                           />
                         </div>
                       </div>
-
                       {/* Voltage Chart */}
                       <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 animate-fadeInUp delay-500">
                         <h3 className="text-2xl font-bold text-gray-800 mb-6 gradient-text">
@@ -1232,7 +1207,6 @@ const Sensor = () => {
                           />
                         </div>
                       </div>
-
                       {/* Current Chart */}
                       <div className="bg-white rounded-2xl shadow-xl border-2 border-lime-100 p-8 animate-fadeInUp delay-600">
                         <h3 className="text-2xl font-bold text-gray-800 mb-6 gradient-text">Grafik Arus (Current)</h3>
