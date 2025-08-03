@@ -20,9 +20,8 @@ import { useNavigate } from "react-router-dom"
 import html2canvas from "html2canvas"
 import Sidebar from "../Sidebar/Sidebar"
 import "./Sensor.css"
-// import imageSrc from '/assets/header.png'; // Remove this line as background will be solid color
+// import imageSrc from '/assets/header.png'; 
 
-// Enhanced Chart Component with detailed data display
 const SimpleLineChart = ({ data, dataKey, color, title, unit = "", chartRef }) => {
   const [hoveredPoint, setHoveredPoint] = useState(null)
   const [showTable, setShowTable] = useState(false)
@@ -666,8 +665,8 @@ const Sensor = () => {
 
   // pH Status Color
   const getPhStatusColor = (ph) => {
-    if (ph >= 7.0 && ph <= 8.0) return "text-green-600" // Optimal
-    if (ph >= 6.5 && ph < 7.0) return "text-yellow-600" // Acceptable
+    if (ph >= 7.0 && ph <= 8.0) return "text-green-600" // Optimal keknya ?
+    if (ph >= 6.5 && ph < 7.0) return "text-yellow-600" // Acceptable 
     return "text-red-600" // Critical
   }
 
@@ -708,7 +707,7 @@ const Sensor = () => {
       <div className="flex-grow">
         {/* Header */}
         <div
-          className="shadow-xl relative overflow-hidden bg-green-900" // Changed to solid dark green
+          className="shadow-xl relative overflow-hidden bg-green-900" 
         >
           <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 relative z-10">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-8 gap-4 sm:gap-0">
@@ -721,13 +720,13 @@ const Sensor = () => {
                 </button>
                 <div>
                   <h1
-                    className="text-4xl font-bold text-white mb-2 flex items-center gap-3" // Ensured text-white and removed text-shadow
+                    className="text-4xl font-bold text-white mb-2 flex items-center gap-3" 
                   >
                     <Activity size={36} />
                     Monitoring Sensor
                   </h1>
                   <p
-                    className="text-white text-lg inline-block mt-1" // Ensured text-white and removed bg-black/20
+                    className="text-white text-lg inline-block mt-1"
                   >
                     Pantau data sensor kolam budidaya secara real-time (Update per jam)
                   </p>
