@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { Home, Cpu, Zap, Activity, Search, Menu, X, XCircle, SandwichIcon as Hamburger } from "lucide-react"
+import { Home, Cpu, Zap, Activity, Search, Menu, X, XCircle, SandwichIcon as Hamburger } from 'lucide-react'
 import "./Sidebar.css"
 
 // Animated Stars Component
@@ -64,7 +64,7 @@ const Sidebar = () => {
   // Detect mobile view and set initial sidebar state
   useEffect(() => {
     const handleResize = () => {
-      const mobile = window.innerWidth <= 768 // Assuming 768px as mobile breakpoint
+      const mobile = window.innerWidth <= 768 
       setIsMobileView(mobile)
       // On mobile, default to closed (icons only). On desktop, default to open.
       if (mobile) {
@@ -74,9 +74,9 @@ const Sidebar = () => {
       }
     }
 
-    handleResize() // Set initial state
-    window.addEventListener("resize", handleResize) // Add event listener
-    return () => window.removeEventListener("resize", handleResize) // Clean up
+    handleResize() 
+    window.addEventListener("resize", handleResize) 
+    return () => window.removeEventListener("resize", handleResize)
   }, [])
 
   const menuItems = [
