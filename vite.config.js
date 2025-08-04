@@ -8,9 +8,9 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://43.165.198.49:8089', // Ganti dengan URL API yang benar
-        changeOrigin: true, // Memastikan origin diubah
-        rewrite: (path) => path.replace(/^\/api/, ''), // Menghapus '/api' jika perlu
+        target: 'http://43.165.198.49:8089', 
+        changeOrigin: true, 
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
   },
