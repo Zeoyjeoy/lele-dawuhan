@@ -9,7 +9,6 @@
     transform: translateY(0);
   }
 }
-
 @keyframes fadeInLeft {
   from {
     opacity: 0;
@@ -20,7 +19,6 @@
     transform: translateX(0);
   }
 }
-
 @keyframes fadeInRight {
   from {
     opacity: 0;
@@ -31,7 +29,6 @@
     transform: translateX(0);
   }
 }
-
 @keyframes slideInFromRight {
   from {
     opacity: 0;
@@ -42,7 +39,6 @@
     transform: translateX(0);
   }
 }
-
 @keyframes slideInFromLeft {
   from {
     opacity: 0;
@@ -53,7 +49,6 @@
     transform: translateX(0);
   }
 }
-
 @keyframes bounce {
   0%,
   20%,
@@ -73,7 +68,6 @@
     transform: translate3d(0, -4px, 0);
   }
 }
-
 @keyframes pulse {
   0% {
     transform: scale(1);
@@ -85,7 +79,6 @@
     transform: scale(1);
   }
 }
-
 @keyframes shake {
   0%,
   100% {
@@ -105,7 +98,6 @@
     transform: translateX(10px);
   }
 }
-
 @keyframes float {
   0% {
     transform: translateY(0px);
@@ -117,19 +109,17 @@
     transform: translateY(0px);
   }
 }
-
 @keyframes glow {
   0% {
-    box-shadow: 0 0 5px rgba(16, 185, 129, 0.2);
+    box-shadow: 0 0 5px rgba(52, 211, 153, 0.2); /* Emerald-400 */
   }
   50% {
-    box-shadow: 0 0 20px rgba(16, 185, 129, 0.4), 0 0 30px rgba(16, 185, 129, 0.2);
+    box-shadow: 0 0 20px rgba(52, 211, 153, 0.4), 0 0 30px rgba(52, 211, 153, 0.2); /* Emerald-400 */
   }
   100% {
-    box-shadow: 0 0 5px rgba(16, 185, 129, 0.2);
+    box-shadow: 0 0 5px rgba(52, 211, 153, 0.2); /* Emerald-400 */
   }
 }
-
 @keyframes ripple {
   0% {
     transform: scale(0);
@@ -141,39 +131,42 @@
   }
 }
 
+/* New Twinkle Animation for Stars */
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 /* Animation Classes */
 .animate-fadeInUp {
   animation: fadeInUp 0.8s ease-out forwards;
 }
-
 .animate-fadeInLeft {
   animation: fadeInLeft 0.8s ease-out forwards;
 }
-
 .animate-fadeInRight {
   animation: fadeInRight 0.8s ease-out forwards;
 }
-
 .animate-slideInFromRight {
   animation: slideInFromRight 0.6s ease-out forwards;
 }
-
 .animate-slideInFromLeft {
   animation: slideInFromLeft 0.6s ease-out forwards;
 }
-
 .animate-bounce {
   animation: bounce 2s infinite;
 }
-
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
-
 .animate-glow {
   animation: glow 2s ease-in-out infinite;
 }
-
 .animate-shake {
   animation: shake 0.5s ease-in-out;
 }
@@ -200,7 +193,6 @@
   position: relative;
   overflow: hidden;
 }
-
 .input-focus-effect::before {
   content: "";
   position: absolute;
@@ -208,19 +200,16 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(52, 211, 153, 0.1), transparent); /* Emerald-400 */
   transition: left 0.5s;
 }
-
 .input-focus-effect:focus-within::before {
   left: 100%;
 }
-
 .button-ripple {
   position: relative;
   overflow: hidden;
 }
-
 .button-ripple::before {
   content: "";
   position: absolute;
@@ -233,50 +222,100 @@
   transform: translate(-50%, -50%);
   transition: width 0.6s, height 0.6s;
 }
-
 .button-ripple:active::before {
   width: 300px;
   height: 300px;
 }
 
-/* Floating Particles */
-.floating-particle {
+/* Star Particles */
+.star-particle {
   position: absolute;
-  border-radius: 50%;
-  background: rgba(16, 185, 129, 0.1);
-  animation: float 6s ease-in-out infinite;
+  background: rgba(255, 255, 255, 0.6); /* White, semi-transparent */
+  box-shadow: 0 0 5px rgba(255, 255, 255, 0.8); /* Subtle glow */
+  animation: float 6s ease-in-out infinite, twinkle 2s infinite alternate;
+  z-index: 0; /* Ensure they are behind content */
 }
 
-.floating-particle:nth-child(1) {
-  width: 80px;
-  height: 80px;
+/* Individual star sizes and positions for variety */
+.star-1 {
+  width: 3px;
+  height: 3px;
   top: 10%;
-  left: 10%;
+  left: 15%;
   animation-delay: 0s;
+  animation-duration: 5s;
 }
-
-.floating-particle:nth-child(2) {
-  width: 60px;
-  height: 60px;
-  top: 20%;
-  right: 10%;
-  animation-delay: 2s;
-}
-
-.floating-particle:nth-child(3) {
-  width: 40px;
-  height: 40px;
-  bottom: 30%;
-  left: 20%;
-  animation-delay: 4s;
-}
-
-.floating-particle:nth-child(4) {
-  width: 100px;
-  height: 100px;
-  bottom: 10%;
+.star-2 {
+  width: 4px;
+  height: 4px;
+  top: 25%;
   right: 20%;
   animation-delay: 1s;
+  animation-duration: 7s;
+}
+.star-3 {
+  width: 2px;
+  height: 2px;
+  bottom: 10%;
+  left: 30%;
+  animation-delay: 2s;
+  animation-duration: 4s;
+}
+.star-4 {
+  width: 5px;
+  height: 5px;
+  top: 40%;
+  left: 5%;
+  animation-delay: 0.5s;
+  animation-duration: 6s;
+}
+.star-5 {
+  width: 3px;
+  height: 3px;
+  bottom: 20%;
+  right: 10%;
+  animation-delay: 1.5s;
+  animation-duration: 5.5s;
+}
+.star-6 {
+  width: 4px;
+  height: 4px;
+  top: 5%;
+  left: 50%;
+  animation-delay: 2.5s;
+  animation-duration: 6.5s;
+}
+.star-7 {
+  width: 2px;
+  height: 2px;
+  top: 60%;
+  right: 5%;
+  animation-delay: 3s;
+  animation-duration: 4.5s;
+}
+.star-8 {
+  width: 5px;
+  height: 5px;
+  bottom: 5%;
+  left: 70%;
+  animation-delay: 0.8s;
+  animation-duration: 7.5s;
+}
+.star-9 {
+  width: 3px;
+  height: 3px;
+  top: 30%;
+  left: 80%;
+  animation-delay: 1.2s;
+  animation-duration: 5s;
+}
+.star-10 {
+  width: 4px;
+  height: 4px;
+  bottom: 30%;
+  right: 40%;
+  animation-delay: 2.2s;
+  animation-duration: 6s;
 }
 
 /* Form Validation States */
@@ -284,17 +323,25 @@
   border-color: #ef4444 !important;
   animation: shake 0.5s ease-in-out;
 }
-
 .input-success {
   border-color: #10b981 !important;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.1); /* Emerald-400 */
 }
 
 /* Toast Animation */
 .toast-enter {
   animation: slideInFromRight 0.3s ease-out forwards;
 }
-
 .toast-exit {
   animation: fadeInRight 0.3s ease-out forwards;
+}
+
+/* Card Hover Effect */
+.card-hover {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
 }

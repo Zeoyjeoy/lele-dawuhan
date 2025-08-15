@@ -4,7 +4,6 @@ import { Link, useLocation } from "react-router-dom"
 import { Home, Cpu, Zap, Activity, Search, Menu, X, XCircle, SandwichIcon as Hamburger } from 'lucide-react'
 import "./Sidebar.css"
 
-// Animated Stars Component
 const AnimatedStars = () => {
   const [stars, setStars] = useState([])
   useEffect(() => {
@@ -61,12 +60,11 @@ const Sidebar = () => {
     }
   }, [])
 
-  // Detect mobile view and set initial sidebar state
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth <= 768 
       setIsMobileView(mobile)
-      // On mobile, default to closed (icons only). On desktop, default to open.
+
       if (mobile) {
         setIsSidebarOpen(false)
       } else {
@@ -132,7 +130,6 @@ const Sidebar = () => {
     setSearchQuery(e.target.value)
   }
 
-  // Content is visible if the sidebar is open (regardless of mobile/desktop)
   const isContentVisible = isSidebarOpen
 
   return (

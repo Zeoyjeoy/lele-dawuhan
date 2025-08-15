@@ -12,9 +12,10 @@ function Dashboard() {
   const [loading, setLoading] = useState(false)
   const [formErrors, setFormErrors] = useState({})
   const [isFormVisible, setIsFormVisible] = useState(true)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const navigate = useNavigate()
 
-  // Enhanced toast notification with animations
   const showToast = (message, type = "info") => {
     const toastElement = document.createElement("div")
     toastElement.className = `
@@ -34,10 +35,10 @@ function Dashboard() {
         <div class="flex-shrink-0">
           ${
             type === "error"
-              ? '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"></path></svg>'
+              ? '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>'
               : type === "success"
                 ? '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>'
-                : '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0016 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path></svg>'
+                : '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path></svg>'
           }
         </div>
         <div class="flex-1">
@@ -58,7 +59,6 @@ function Dashboard() {
     }, 3000)
   }
 
-  // Form validation
   const validateForm = () => {
     const errors = {}
 
@@ -84,7 +84,6 @@ function Dashboard() {
     return Object.keys(errors).length === 0
   }
 
-  // Handle Register with validation
   const handleRegister = async () => {
     if (!validateForm()) {
       showToast("Mohon periksa kembali form Anda!", "error")
@@ -110,13 +109,11 @@ function Dashboard() {
 
       if (response.ok && data.status !== "400 BAD_REQUEST") {
         showToast("Pendaftaran berhasil! Silakan login.", "success")
-        // Reset form dan beralih ke login dengan animasi
         setUsername("")
         setPassword("")
         setConfirmPassword("")
         setFormErrors({})
 
-        // Smooth transition to login
         setIsFormVisible(false)
         setTimeout(() => {
           setIsLogin(true)
@@ -141,7 +138,6 @@ function Dashboard() {
     }
   }
 
-  // Handle Login with validation
   const handleLogin = async () => {
     if (!validateForm()) {
       showToast("Username dan password harus diisi!", "error")
@@ -176,7 +172,6 @@ function Dashboard() {
         window.userSession = userSession
         showToast("Login berhasil! Selamat datang di dashboard.", "success")
 
-        // Smooth navigation
         setTimeout(() => {
           navigate("/homepage")
         }, 1000)
@@ -200,6 +195,8 @@ function Dashboard() {
     setPassword("")
     setConfirmPassword("")
     setFormErrors({})
+    setShowPassword(false)
+    setShowConfirmPassword(false)
   }
 
   const toggleLoginRegister = () => {
@@ -211,7 +208,6 @@ function Dashboard() {
     }, 300)
   }
 
-  // Input change handlers with validation
   const handleUsernameChange = (e) => {
     setUsername(e.target.value)
     if (formErrors.username) {
@@ -231,6 +227,14 @@ function Dashboard() {
     if (formErrors.confirmPassword) {
       setFormErrors((prev) => ({ ...prev, confirmPassword: null }))
     }
+  }
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword)
+  }
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword)
   }
 
   return (
@@ -320,7 +324,7 @@ function Dashboard() {
               {/* Password Field */}
               <div className="relative animate-fadeInUp delay-500">
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Password"
                   value={password}
                   onChange={handlePasswordChange}
@@ -334,14 +338,32 @@ function Dashboard() {
                   disabled={loading}
                 />
                 <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 15v2m-6 2h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                    ></path>
-                  </svg>
+                  <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+                    disabled={loading}
+                  >
+                    {showPassword ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"
+                        ></path>
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M12 15v2m-6 2h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                        ></path>
+                      </svg>
+                    )}
+                  </button>
                 </div>
                 {formErrors.password && (
                   <p className="text-red-500 text-xs mt-1 animate-fadeInUp">{formErrors.password}</p>
@@ -352,7 +374,7 @@ function Dashboard() {
               {!isLogin && (
                 <div className="relative animate-slideInFromRight">
                   <input
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     placeholder="Konfirmasi Password"
                     value={confirmPassword}
                     onChange={handleConfirmPasswordChange}
@@ -366,14 +388,32 @@ function Dashboard() {
                     disabled={loading}
                   />
                   <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 15v2m-6 2h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                      ></path>
-                    </svg>
+                    <button
+                      type="button"
+                      onClick={toggleConfirmPasswordVisibility}
+                      className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+                      disabled={loading}
+                    >
+                      {showConfirmPassword ? (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"
+                          ></path>
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M12 15v2m-6 2h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                          ></path>
+                        </svg>
+                      )}
+                    </button>
                   </div>
                   {formErrors.confirmPassword && (
                     <p className="text-red-500 text-xs mt-1 animate-fadeInUp">{formErrors.confirmPassword}</p>
@@ -385,7 +425,7 @@ function Dashboard() {
               {isLogin && (
                 <div className="text-right animate-fadeInUp delay-600">
                   <button className="text-sm text-gray-500 hover:text-emerald-600 transition-colors hover:underline">
-                    Forgot Password?
+                    Lupa Password?
                   </button>
                 </div>
               )}

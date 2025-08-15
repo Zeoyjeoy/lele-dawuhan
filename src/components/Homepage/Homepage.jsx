@@ -4,7 +4,6 @@ import { Plus, Power, PowerOff, AlertCircle, CheckCircle, Users, Activity, Trend
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../Sidebar/Sidebar"
 import "./Homepage.css"
-// import imageSrc from '/assets/header.png'; 
 
 const Homepage = () => {
   const [pools, setPools] = useState([])
@@ -19,17 +18,14 @@ const Homepage = () => {
   const [sidebarVisible, setSidebarVisible] = useState(true)
   const navigate = useNavigate()
 
-  // API Base URL
   const API_BASE = "https://monitoring.infarm.web.id/servers/api/kolam"
 
-  // User-specific localStorage keys
   const getUserSpecificKey = (key) => {
     return userSession?.id ? `${key}_user_${userSession.id}` : key
   }
   const POOLS_STORAGE_KEY = "kolam_pools_data"
   const LAST_SYNC_KEY = "kolam_last_sync"
 
-  // localStorage functions with user-specific keys
   const savePoolsToStorage = (poolsData) => {
     try {
       if (userSession?.id) {
@@ -68,7 +64,6 @@ const Homepage = () => {
     return null
   }
 
-  // Generate unique pool code
   const generatePoolCode = () => {
     const prefix = "KLM"
     const timestamp = Date.now().toString().slice(-6) // Last 6 digits of timestamp
@@ -78,7 +73,6 @@ const Homepage = () => {
     return `${prefix}${timestamp}${random}`
   }
 
-  // Get user session on component mount
   useEffect(() => {
     const session = window.userSession
     if (session) {
@@ -90,20 +84,18 @@ const Homepage = () => {
     }
   }, [navigate])
 
-  // Enhanced notification with animations
   const showNotification = (message, type = "success") => {
     setNotification({ message, type })
     setTimeout(() => setNotification(null), 4000)
   }
 
-  // Fetch all pools
   const fetchPools = async () => {
     if (!userSession?.id || !userSession?.token) {
       console.log("No user session or token")
       setLoading(false)
       return
     }
-    // Load from localStorage first (user-specific)
+
     const cachedPools = loadPoolsFromStorage()
     if (cachedPools.length > 0) {
       setPools(cachedPools)
@@ -128,10 +120,10 @@ const Homepage = () => {
       console.log("Pools data received from API:", data)
       if (data.status === "200 OK" && data.payload && Array.isArray(data.payload)) {
         setPools(data.payload)
-        savePoolsToStorage(data.payload) // Save to localStorage
+        savePoolsToStorage(data.payload) 
         console.log("Pools updated from API and saved to localStorage")
       } else {
-        // If no pools from API, clear localStorage and set empty array
+        
         setPools([])
         savePoolsToStorage([])
         console.log("No pools found from API, cleared localStorage")
@@ -150,7 +142,6 @@ const Homepage = () => {
     }
   }
 
-  // Fetch pools when userSession is available
   useEffect(() => {
     if (userSession?.id) {
       fetchPools()
@@ -228,8 +219,6 @@ const Homepage = () => {
       setApiLoading(false)
     }
   }
-
-  // Update pool status (bulk or single)
   const handleBulkStatusChange = async (activate) => {
     try {
       setApiLoading(true)
@@ -273,8 +262,7 @@ const Homepage = () => {
       setApiLoading(false)
     }
   }
-
-  // Handle single pool status toggle
+  
   const handleSinglePoolToggle = async (pool) => {
     try {
       setApiLoading(true)
@@ -311,7 +299,7 @@ const Homepage = () => {
 
   const getStatusColor = (status) => {
     return status
-      ? "bg-gradient-to-r from-lime-100 to-green-100 text-green-800 border border-green-200"
+      ? "bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-800 border border-emerald-200"
       : "bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border border-red-200"
   }
   const getStatusText = (status) => {
@@ -324,11 +312,11 @@ const Homepage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-lime-50 via-green-50 to-emerald-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-slate-50 flex items-center justify-center">
         <div className="text-center animate-fadeInUp">
           <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-lime-200 border-t-lime-500 mx-auto mb-6"></div>
-            <div className="absolute inset-0 rounded-full h-16 w-16 border-4 border-transparent border-t-green-400 animate-pulse mx-auto"></div>
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-emerald-200 border-t-emerald-600 mx-auto mb-6"></div>
+            <div className="absolute inset-0 rounded-full h-16 w-16 border-4 border-transparent border-t-green-500 animate-pulse mx-auto"></div>
           </div>
           <p className="text-gray-700 font-medium text-lg">Memuat data kolam...</p>
           <p className="text-gray-500 text-sm mt-2">Mohon tunggu sebentar</p>
@@ -338,7 +326,7 @@ const Homepage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-lime-50 via-green-50 to-emerald-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-slate-50 flex">
       {/* Sidebar */}
       {sidebarVisible && <Sidebar />}
       {/* Main Content */}
@@ -348,14 +336,14 @@ const Homepage = () => {
           <div
             className={`fixed top-6 right-6 z-50 p-4 rounded-xl shadow-2xl border-l-4 animate-slideInFromRight ${
               notification.type === "success"
-                ? "bg-gradient-to-r from-lime-50 to-green-50 border-lime-400 text-green-800"
+                ? "bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-500 text-emerald-800"
                 : "bg-gradient-to-r from-red-50 to-pink-50 border-red-400 text-red-800"
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full ${notification.type === "success" ? "bg-lime-100" : "bg-red-100"}`}>
+              <div className={`p-2 rounded-full ${notification.type === "success" ? "bg-emerald-100" : "bg-red-100"}`}>
                 {notification.type === "success" ? (
-                  <CheckCircle size={20} className="text-green-600" />
+                  <CheckCircle size={20} className="text-emerald-600" />
                 ) : (
                   <AlertCircle size={20} className="text-red-600" />
                 )}
@@ -372,9 +360,9 @@ const Homepage = () => {
         {/* Loading Overlay */}
         {apiLoading && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 backdrop-blur-sm">
-            <div className="bg-white p-8 rounded-2xl shadow-2xl border border-lime-200 animate-fadeInUp">
+            <div className="bg-white p-8 rounded-2xl shadow-2xl border border-emerald-200 animate-fadeInUp">
               <div className="flex items-center space-x-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-4 border-lime-200 border-t-lime-500"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-4 border-emerald-200 border-t-emerald-600"></div>
                 <div>
                   <p className="text-gray-800 font-semibold">Memproses...</p>
                   <p className="text-gray-500 text-sm">Mohon tunggu sebentar</p>
@@ -383,40 +371,48 @@ const Homepage = () => {
             </div>
           </div>
         )}
-        {/* Header with Background Image */}
-        <div
-          className="relative shadow-xl overflow-hidden bg-green-900" // Mengubah background menjadi hijau gelap
-        >
+        <div className="relative shadow-xl overflow-hidden bg-gradient-to-br from-emerald-900 via-green-800 to-emerald-800">
+          {/* Animated background pattern */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-emerald-600/20 to-green-600/20 animate-pulse"></div>
+            <div className="absolute top-10 left-10 w-32 h-32 bg-emerald-400/10 rounded-full animate-bounce delay-1000"></div>
+            <div className="absolute bottom-10 right-10 w-24 h-24 bg-green-400/10 rounded-full animate-bounce delay-2000"></div>
+            <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-emerald-300/10 rounded-full animate-pulse delay-500"></div>
+          </div>
+
           <div className="relative max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-8 gap-4 sm:gap-0">
               <div className="animate-slideInFromLeft">
-                <h1
-                  className="text-4xl font-bold text-white mb-2" // Menghapus drop-shadow dan style textShadow
-                >
-                  Monitoring Kolam Budidaya 🐟🫧
-                </h1>
-                <p
-                  className="text-white text-lg" // Menghapus drop-shadow dan style textShadow
-                >
-                  Selamat datang, <span className="font-semibold text-white">{userSession?.username}</span>
-                  <br />
-                  <span className="text-sm inline-block mt-1">
-                    Kelola dan pantau status kolam budidaya Anda dengan mudah
+                <h1 className="text-4xl font-bold text-white mb-2 animate-fadeIn delay-300 hover:scale-105 transition-transform duration-300">
+                  <span className="inline-block animate-bounce delay-100">🐟</span>
+                  <span className="mx-2 bg-gradient-to-r from-white to-emerald-100 bg-clip-text text-transparent animate-pulse">
+                    Monitoring Kolam Budidaya
                   </span>
-                  <br />
-                  {getLastSyncTime() && (
-                    <span className="text-xs opacity-90 inline-block mt-1">
-                      Terakhir disinkronkan: {getLastSyncTime().toLocaleString("id-ID")}
+                  <span className="inline-block animate-bounce delay-200">🫧</span>
+                </h1>
+                <div className="animate-slideInFromLeft delay-500">
+                  <p className="text-emerald-100 text-lg animate-fadeIn delay-700">
+                    Selamat datang,{" "}
+                    <span className="font-semibold text-white animate-pulse">{userSession?.username}</span>
+                    <br />
+                    <span className="text-sm inline-block mt-1 animate-slideInFromLeft delay-1000">
+                      Kelola dan pantau status kolam budidaya Anda dengan mudah
                     </span>
-                  )}
-                </p>
+                    <br />
+                    {getLastSyncTime() && (
+                      <span className="text-xs opacity-90 inline-block mt-1 animate-fadeIn delay-1200">
+                        Terakhir disinkronkan: {getLastSyncTime().toLocaleString("id-ID")}
+                      </span>
+                    )}
+                  </p>
+                </div>
               </div>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto animate-slideInFromRight">
                 <button
                   onClick={() => setShowAddForm(!showAddForm)}
-                  className="w-full sm:w-auto bg-white hover:bg-lime-50 text-green-700 px-6 py-3 rounded-xl flex items-center justify-center sm:justify-start gap-3 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple font-semibold"
+                  className="w-full sm:w-auto bg-white hover:bg-emerald-50 text-emerald-800 px-6 py-3 rounded-xl flex items-center justify-center sm:justify-start gap-3 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple font-semibold animate-fadeIn delay-800 hover:animate-pulse"
                 >
-                  <Plus size={22} />
+                  <Plus size={22} className="animate-spin hover:animate-none transition-all duration-300" />
                   Tambah Kolam
                 </button>
                 <button
@@ -424,7 +420,7 @@ const Homepage = () => {
                     window.userSession = null
                     navigate("/")
                   }}
-                  className="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple font-semibold"
+                  className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple font-semibold animate-fadeIn delay-1000"
                 >
                   Logout
                 </button>
@@ -432,63 +428,61 @@ const Homepage = () => {
             </div>
           </div>
         </div>
-        {/* Stats Cards */}
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 -mt-6 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-gradient-to-br from-lime-400 to-green-500 rounded-2xl p-6 text-white shadow-xl animate-fadeInUp delay-100 card-hover">
+            <div className="bg-white rounded-2xl p-6 shadow-xl animate-fadeInUp delay-100 card-hover border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-lime-100 text-sm font-medium">Total Kolam</p>
-                  <p className="text-3xl font-bold">{pools.length}</p>
+                  <p className="text-gray-600 text-sm font-medium">Total Kolam</p>
+                  <p className="text-3xl font-bold text-gray-800">{pools.length}</p>
                 </div>
-                <div className="bg-white/20 p-3 rounded-xl">
-                  <Droplets size={24} />
+                <div className="bg-emerald-100 p-3 rounded-xl">
+                  <Droplets size={24} className="text-emerald-600" />
                 </div>
               </div>
             </div>
-            <div className="bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl p-6 text-white shadow-xl animate-fadeInUp delay-200 card-hover">
+            <div className="bg-white rounded-2xl p-6 shadow-xl animate-fadeInUp delay-200 card-hover border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-green-100 text-sm font-medium">Kolam Aktif</p>
-                  <p className="text-3xl font-bold">{activePoolsCount}</p>
+                  <p className="text-gray-600 text-sm font-medium">Kolam Aktif</p>
+                  <p className="text-3xl font-bold text-gray-800">{activePoolsCount}</p>
                 </div>
-                <div className="bg-white/20 p-3 rounded-xl">
-                  <Activity size={24} />
+                <div className="bg-green-100 p-3 rounded-xl">
+                  <Activity size={24} className="text-green-600" />
                 </div>
               </div>
             </div>
-            <div className="bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl p-6 text-white shadow-xl animate-fadeInUp delay-300 card-hover">
+            <div className="bg-white rounded-2xl p-6 shadow-xl animate-fadeInUp delay-300 card-hover border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-emerald-100 text-sm font-medium">Tidak Aktif</p>
-                  <p className="text-3xl font-bold">{inactivePoolsCount}</p>
+                  <p className="text-gray-600 text-sm font-medium">Tidak Aktif</p>
+                  <p className="text-3xl font-bold text-gray-800">{inactivePoolsCount}</p>
                 </div>
-                <div className="bg-white/20 p-3 rounded-xl">
-                  <PowerOff size={24} />
+                <div className="bg-slate-100 p-3 rounded-xl">
+                  <PowerOff size={24} className="text-slate-600" />
                 </div>
               </div>
             </div>
-            <div className="bg-gradient-to-br from-teal-400 to-cyan-500 rounded-2xl p-6 text-white shadow-xl animate-fadeInUp delay-400 card-hover">
+            <div className="bg-white rounded-2xl p-6 shadow-xl animate-fadeInUp delay-400 card-hover border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-teal-100 text-sm font-medium">Efisiensi</p>
-                  <p className="text-3xl font-bold">
+                  <p className="text-gray-600 text-sm font-medium">Efisiensi</p>
+                  <p className="text-3xl font-bold text-gray-800">
                     {pools.length > 0 ? Math.round((activePoolsCount / pools.length) * 100) : 0}%
                   </p>
                 </div>
-                <div className="bg-white/20 p-3 rounded-xl">
-                  <TrendingUp size={24} />
+                <div className="bg-emerald-100 p-3 rounded-xl">
+                  <TrendingUp size={24} className="text-emerald-600" />
                 </div>
               </div>
             </div>
           </div>
         </div>
-        {/* Add Pool Form */}
         {showAddForm && (
           <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 mb-8">
-            <div className="bg-gradient-to-r from-lime-50 to-green-50 border-2 border-lime-200 rounded-2xl p-8 shadow-xl animate-fadeInUp">
+            <div className="bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-2xl p-8 shadow-xl animate-fadeInUp">
               <div className="flex items-center gap-3 mb-6">
-                <div className="bg-lime-400 p-3 rounded-xl">
+                <div className="bg-emerald-600 p-3 rounded-xl">
                   <Plus size={24} className="text-white" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-800">Tambah Kolam Baru</h3>
@@ -500,7 +494,7 @@ const Homepage = () => {
                     type="text"
                     value={newPoolName}
                     onChange={(e) => setNewPoolName(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-lime-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-lime-200 focus:border-lime-400 transition-all duration-300 bg-white"
+                    className="w-full px-4 py-3 border-2 border-emerald-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-emerald-200 focus:border-emerald-500 transition-all duration-300 bg-white"
                     placeholder="Masukkan nama kolam"
                     required
                   />
@@ -519,7 +513,7 @@ const Homepage = () => {
                 <button
                   onClick={handleAddPool}
                   disabled={apiLoading || !newPoolName.trim()}
-                  className="w-full sm:w-auto bg-gradient-to-r from-lime-400 to-green-500 hover:from-lime-500 hover:to-green-600 disabled:from-gray-300 disabled:to-gray-400 text-white px-8 py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple disabled:transform-none disabled:hover:scale-100"
+                  className="w-full sm:w-auto bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 disabled:from-gray-300 disabled:to-gray-400 text-white px-8 py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple disabled:transform-none disabled:hover:scale-100"
                 >
                   {apiLoading ? "Menyimpan..." : "Simpan Kolam"}
                 </button>
@@ -539,21 +533,20 @@ const Homepage = () => {
         )}
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pb-8">
-          {/* Bulk Actions */}
           {selectedPools.length > 0 && (
-            <div className="bg-gradient-to-r from-lime-100 to-green-100 border-2 border-lime-300 rounded-2xl p-6 mb-8 shadow-lg animate-fadeInUp">
+            <div className="bg-gradient-to-r from-emerald-100 to-green-100 border-2 border-emerald-300 rounded-2xl p-6 mb-8 shadow-lg animate-fadeInUp">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
                 <div className="flex items-center gap-3">
-                  <div className="bg-lime-400 p-2 rounded-lg">
+                  <div className="bg-emerald-600 p-2 rounded-lg">
                     <Users size={20} className="text-white" />
                   </div>
-                  <span className="text-green-800 font-bold text-lg">{selectedPools.length} kolam dipilih</span>
+                  <span className="text-emerald-800 font-bold text-lg">{selectedPools.length} kolam dipilih</span>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                   <button
                     onClick={() => handleBulkStatusChange(true)}
                     disabled={apiLoading}
-                    className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-300 disabled:to-gray-400 text-white px-4 py-2 rounded-xl text-sm flex items-center justify-center sm:justify-start gap-2 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
+                    className="w-full sm:w-auto bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 disabled:from-gray-300 disabled:to-gray-400 text-white px-4 py-2 rounded-xl text-sm flex items-center justify-center sm:justify-start gap-2 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
                   >
                     <Power size={16} />
                     Aktifkan
@@ -573,40 +566,38 @@ const Homepage = () => {
           {/* Pool Cards */}
           {pools.length === 0 ? (
             <div className="text-center py-16 animate-fadeInUp">
-              <div className="w-32 h-32 bg-gradient-to-br from-lime-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
-                <Plus size={48} className="text-lime-500" />
+              <div className="w-32 h-32 bg-gradient-to-br from-emerald-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
+                <Plus size={48} className="text-emerald-600" />
               </div>
               <h3 className="text-2xl font-bold text-gray-800 mb-4">Belum ada kolam</h3>
               <p className="text-gray-600 mb-8 text-lg">Mulai dengan menambahkan kolam pertama Anda</p>
               <button
                 onClick={() => setShowAddForm(true)}
-                className="bg-gradient-to-r from-lime-400 to-green-500 hover:from-lime-500 hover:to-green-600 text-white px-8 py-4 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
+                className="bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 text-white px-8 py-4 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple"
               >
                 Tambah Kolam Pertama
               </button>
             </div>
           ) : (
             <>
-              {/* Select All Checkbox */}
-              <div className="bg-white rounded-2xl shadow-lg border-2 border-lime-100 mb-6 p-6 animate-fadeInUp">
+              <div className="bg-white rounded-2xl shadow-lg border-2 border-emerald-100 mb-6 p-6 animate-fadeInUp">
                 <label className="flex items-center cursor-pointer group">
                   <input
                     type="checkbox"
                     checked={selectedPools.length === pools.length}
                     onChange={handleSelectAll}
-                    className="h-5 w-5 text-lime-500 focus:ring-lime-400 border-2 border-lime-300 rounded transition-all duration-300"
+                    className="h-5 w-5 text-emerald-600 focus:ring-emerald-400 border-2 border-emerald-300 rounded transition-all duration-300"
                   />
-                  <span className="ml-4 text-lg font-semibold text-gray-700 group-hover:text-lime-600 transition-colors">
+                  <span className="ml-4 text-lg font-semibold text-gray-700 group-hover:text-emerald-600 transition-colors">
                     Pilih Semua Kolam ({pools.length})
                   </span>
                 </label>
               </div>
-              {/* Pool Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {pools.map((pool, index) => (
                   <div
                     key={pool.id}
-                    className="bg-white rounded-2xl shadow-lg border-2 border-lime-100 hover:border-lime-300 transition-all duration-300 card-hover animate-fadeInUp"
+                    className="bg-white rounded-2xl shadow-lg border-2 border-emerald-100 hover:border-emerald-300 transition-all duration-300 card-hover animate-fadeInUp"
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
                     <div className="p-6">
@@ -616,13 +607,13 @@ const Homepage = () => {
                             type="checkbox"
                             checked={selectedPools.includes(pool.id)}
                             onChange={() => handleSelectPool(pool.id)}
-                            className="h-5 w-5 text-lime-500 focus:ring-lime-400 border-2 border-lime-300 rounded transition-all duration-300"
+                            className="h-5 w-5 text-emerald-600 focus:ring-emerald-400 border-2 border-emerald-300 rounded transition-all duration-300"
                           />
                           <div>
                             <h3 className="font-bold text-xl text-gray-800 mb-1">
                               {pool.name || `Kolam ${pool.code}`}
                             </h3>
-                            <p className="text-lime-600 font-semibold bg-lime-50 px-3 py-1 rounded-lg text-sm border border-lime-200">
+                            <p className="text-emerald-700 font-semibold bg-emerald-50 px-3 py-1 rounded-lg text-sm border border-emerald-200">
                               {pool.code}
                             </p>
                           </div>
@@ -662,7 +653,7 @@ const Homepage = () => {
                           className={`w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 disabled:opacity-50 shadow-lg hover:shadow-xl transform hover:scale-105 btn-ripple ${
                             pool.status
                               ? "bg-gradient-to-r from-orange-400 to-red-500 text-white hover:from-orange-500 hover:to-red-600"
-                              : "bg-gradient-to-r from-lime-400 to-green-500 text-white hover:from-lime-500 hover:to-green-600"
+                              : "bg-gradient-to-r from-emerald-600 to-green-700 text-white hover:from-emerald-700 hover:to-green-800"
                           }`}
                         >
                           {pool.status ? (

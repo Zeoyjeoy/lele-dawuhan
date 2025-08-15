@@ -6,7 +6,7 @@
   overflow: hidden;
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   width: 320px;
-  background: linear-gradient(135deg, #94e1a8 0%, #7dd3a0 50%, #66c593 100%);
+  background: linear-gradient(135deg, #045f1c 0%, #065325 50%, #307a53 100%);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   position: relative;
 }
@@ -494,8 +494,8 @@
   right: 0;
   width: 4px;
   height: 100%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.4));
-  opacity: 0.6;
+  background: white;
+  opacity: 1;
 }
 
 /* Animations */
