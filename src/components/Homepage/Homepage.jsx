@@ -20,48 +20,43 @@ const Homepage = () => {
 
   const API_BASE = "https://monitoring.infarm.web.id/servers/api/kolam"
 
-  const getUserSpecificKey = (key) => {
-    return userSession?.id ? `${key}_user_${userSession.id}` : key
-  }
-  const POOLS_STORAGE_KEY = "kolam_pools_data"
-  const LAST_SYNC_KEY = "kolam_last_sync"
+  const POOLS_STORAGE_KEY = `pools_user_${userSession?.id || "default"}`
 
   const savePoolsToStorage = (poolsData) => {
     try {
-      if (userSession?.id) {
-        localStorage.setItem(getUserSpecificKey(POOLS_STORAGE_KEY), JSON.stringify(poolsData))
-        localStorage.setItem(getUserSpecificKey(LAST_SYNC_KEY), new Date().toISOString())
-        console.log("Pools saved to localStorage for user:", userSession.id, poolsData)
-      }
+      localStorage.setItem(POOLS_STORAGE_KEY, JSON.stringify(poolsData))
+      console.log("Pools saved to localStorage:", poolsData)
     } catch (error) {
       console.error("Error saving pools to localStorage:", error)
     }
   }
+
   const loadPoolsFromStorage = () => {
     try {
-      if (userSession?.id) {
-        const savedPools = localStorage.getItem(getUserSpecificKey(POOLS_STORAGE_KEY))
-        if (savedPools) {
-          const parsedPools = JSON.parse(savedPools)
-          console.log("Pools loaded from localStorage for user:", userSession.id, parsedPools)
-          return parsedPools
-        }
+      const stored = localStorage.getItem(POOLS_STORAGE_KEY)
+      if (stored) {
+        const parsedPools = JSON.parse(stored)
+        console.log("Pools loaded from localStorage:", parsedPools)
+        return parsedPools
       }
     } catch (error) {
       console.error("Error loading pools from localStorage:", error)
     }
     return []
   }
-  const getLastSyncTime = () => {
+
+  const clearPoolsFromStorage = () => {
     try {
-      if (userSession?.id) {
-        const lastSync = localStorage.getItem(getUserSpecificKey(LAST_SYNC_KEY))
-        return lastSync ? new Date(lastSync) : null
-      }
+      localStorage.removeItem(POOLS_STORAGE_KEY)
+      console.log("Pools cleared from localStorage")
     } catch (error) {
-      console.error("Error getting last sync time:", error)
+      console.error("Error clearing pools from localStorage:", error)
     }
-    return null
+  }
+
+  const savePoolsAfterAction = (updatedPools) => {
+    setPools(updatedPools)
+    savePoolsToStorage(updatedPools)
   }
 
   const generatePoolCode = () => {
@@ -91,20 +86,19 @@ const Homepage = () => {
 
   const fetchPools = async () => {
     if (!userSession?.id || !userSession?.token) {
-      console.log("No user session or token")
-      setLoading(false)
+      console.log("No user session or token, cannot fetch pools")
       return
     }
 
-    const cachedPools = loadPoolsFromStorage()
-    if (cachedPools.length > 0) {
-      setPools(cachedPools)
-      console.log("Loaded pools from localStorage for user:", userSession.id)
-    }
     try {
       setLoading(true)
+
+      const storedPools = loadPoolsFromStorage()
+      console.log("Loaded pools from localStorage for user:", userSession.id)
+
+      console.log("Fetching pools from API:")
       const url = `${API_BASE}/select/all?id=${userSession.id}`
-      console.log("Fetching pools from API:", url)
+      console.log("Fetching pools from:", url)
       const response = await fetch(url, {
         method: "GET",
         headers: {
@@ -112,30 +106,52 @@ const Homepage = () => {
           Authorization: `Bearer ${userSession.token}`,
         },
       })
+
       console.log("Response status:", response.status)
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
+
       const data = await response.json()
       console.log("Pools data received from API:", data)
+
+      let serverPools = []
       if (data.status === "200 OK" && data.payload && Array.isArray(data.payload)) {
-        setPools(data.payload)
-        savePoolsToStorage(data.payload) 
-        console.log("Pools updated from API and saved to localStorage")
+        serverPools = data.payload
+      }
+
+      const mergedPools = serverPools.map((apiPool) => {
+        // Find corresponding pool in localStorage
+        const storedPool = storedPools.find((stored) => stored.id === apiPool.id)
+        if (storedPool) {
+          // Keep the localStorage status, but use API data for other fields
+          return {
+            ...apiPool,
+            status: storedPool.status, // Preserve user's status changes
+          }
+        }
+        // New pool from API, use API status
+        return apiPool
+      })
+
+      console.log("Pools saved to localStorage for user:", userSession.id)
+      setPools(mergedPools)
+      if (mergedPools.length > 0) {
+        savePoolsToStorage(mergedPools)
       } else {
-        
-        setPools([])
-        savePoolsToStorage([])
-        console.log("No pools found from API, cleared localStorage")
+        clearPoolsFromStorage()
       }
     } catch (error) {
-      console.error("Error fetching pools from API:", error)
-      // If API fails and no cached data, show empty state
-      if (cachedPools.length === 0) {
-        setPools([])
-        showNotification("Tidak dapat memuat data kolam. " + error.message, "error")
+      console.error("Error fetching pools from server:", error)
+      const storedPools = loadPoolsFromStorage()
+      if (storedPools.length > 0) {
+        console.log("Server unreachable, using localStorage fallback")
+        setPools(storedPools)
+        showNotification("Menggunakan data offline. Koneksi server bermasalah.", "error")
       } else {
-        showNotification("Menggunakan data tersimpan. " + error.message, "error")
+        setPools([])
+        showNotification("Gagal memuat data kolam: " + error.message, "error")
       }
     } finally {
       setLoading(false)
@@ -160,7 +176,6 @@ const Homepage = () => {
     setSelectedPools((prev) => (prev.includes(poolId) ? prev.filter((id) => id !== poolId) : [...prev, poolId]))
   }
 
-  // Generate new code when form is opened
   useEffect(() => {
     if (showAddForm) {
       const newCode = generatePoolCode()
@@ -168,7 +183,6 @@ const Homepage = () => {
     }
   }, [showAddForm])
 
-  // Add new pool
   const handleAddPool = async () => {
     if (!newPoolName.trim()) {
       showNotification("Nama kolam harus diisi", "error")
@@ -203,8 +217,7 @@ const Homepage = () => {
       console.log("Add pool response data:", data)
       if (data.status === "201 CREATED" && data.payload) {
         const updatedPools = [...pools, data.payload]
-        setPools(updatedPools)
-        savePoolsToStorage(updatedPools) // Save to localStorage
+        savePoolsAfterAction(updatedPools)
         setNewPoolName("")
         setGeneratedCode("")
         setShowAddForm(false)
@@ -219,54 +232,90 @@ const Homepage = () => {
       setApiLoading(false)
     }
   }
+
   const handleBulkStatusChange = async (activate) => {
     try {
       setApiLoading(true)
-      const updatePromises = selectedPools.map(async (poolId) => {
-        const pool = pools.find((p) => p.id === poolId)
-        if (!pool) return null
-        console.log("Updating pool status:", { code: pool.code, val: activate, id: poolId })
-        const response = await fetch(`${API_BASE}/updatestatus?code=${pool.code}&val=${activate}&id=${poolId}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${userSession.token}`,
-          },
-        })
-        console.log(`Update status response for ${pool.code}:`, response.status)
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
+      const selectedPoolObjects = selectedPools.map((poolId) => pools.find((p) => p.id === poolId)).filter(Boolean)
+      console.log(
+        "Starting bulk update for pools:",
+        selectedPoolObjects.map((p) => p.code),
+      )
+
+      let successCount = 0
+      let failureCount = 0
+      const results = []
+
+      for (const pool of selectedPoolObjects) {
+        try {
+          if (results.length > 0) {
+            await new Promise((resolve) => setTimeout(resolve, 200))
+          }
+
+          console.log("Updating pool status:", { code: pool.code, val: activate, id: pool.id })
+          const response = await fetch(`${API_BASE}/updatestatus?code=${pool.code}&val=${activate}&id=${pool.id}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${userSession.token}`,
+            },
+          })
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+
+          const data = await response.json()
+          if (data.status === "200 OK") {
+            successCount++
+            console.log(`✓ Pool ${pool.code} updated successfully`)
+            results.push({ success: true, poolId: pool.id })
+          } else {
+            failureCount++
+            console.log(`✗ Pool ${pool.code} failed: ${data.message}`)
+            results.push({ success: false, poolId: pool.id, error: data.message })
+          }
+        } catch (error) {
+          failureCount++
+          console.log(`✗ Pool ${pool.code} failed: ${error.message}`)
+          results.push({ success: false, poolId: pool.id, error: error.message })
         }
-        const data = await response.json()
-        console.log(`Update status response data for ${pool.code}:`, data)
-        return { poolId, success: data.status === "200 OK" }
-      })
-      const results = await Promise.all(updatePromises)
-      console.log("Bulk update results:", results)
-      const successCount = results.filter((r) => r && r.success).length
+      }
+
       if (successCount > 0) {
-        const updatedPools = pools.map((pool) =>
-          selectedPools.includes(pool.id) ? { ...pool, status: activate } : pool,
+        const updatedPools = pools.map((pool) => {
+          const successResult = results.find((r) => r.success && r.poolId === pool.id)
+          if (successResult) {
+            return { ...pool, status: activate }
+          }
+          return pool
+        })
+        savePoolsAfterAction(updatedPools)
+      }
+
+      if (successCount > 0 && failureCount === 0) {
+        showNotification(`Semua ${successCount} kolam berhasil ${activate ? "diaktifkan" : "dinonaktifkan"}`, "success")
+      } else if (successCount > 0 && failureCount > 0) {
+        showNotification(
+          `${successCount} kolam berhasil ${activate ? "diaktifkan" : "dinonaktifkan"}, ${failureCount} gagal`,
+          "error",
         )
-        setPools(updatedPools)
-        savePoolsToStorage(updatedPools) // Save to localStorage
-        showNotification(`${successCount} kolam berhasil ${activate ? "diaktifkan" : "dinonaktifkan"}`)
       } else {
-        showNotification("Gagal mengubah status kolam", "error")
+        showNotification(`Semua kolam gagal diubah. Periksa koneksi dan coba lagi.`, "error")
       }
       setSelectedPools([])
     } catch (error) {
-      console.error("Error updating pool status:", error)
+      console.error("Error in bulk pool update:", error)
       showNotification("Gagal mengubah status kolam: " + error.message, "error")
     } finally {
       setApiLoading(false)
     }
   }
-  
+
   const handleSinglePoolToggle = async (pool) => {
+    const newStatus = !pool.status
     try {
       setApiLoading(true)
-      const newStatus = !pool.status
       console.log("Toggling pool status:", { pool, newStatus })
       const response = await fetch(`${API_BASE}/updatestatus?code=${pool.code}&val=${newStatus}&id=${pool.id}`, {
         method: "PUT",
@@ -283,8 +332,7 @@ const Homepage = () => {
       console.log("Toggle status response data:", data)
       if (data.status === "200 OK") {
         const updatedPools = pools.map((p) => (p.id === pool.id ? { ...p, status: newStatus } : p))
-        setPools(updatedPools)
-        savePoolsToStorage(updatedPools) // Save to localStorage
+        savePoolsAfterAction(updatedPools)
         showNotification(`${pool.name || pool.code} ${newStatus ? "diaktifkan" : "dinonaktifkan"}`)
       } else {
         throw new Error("Invalid response format")
@@ -398,12 +446,6 @@ const Homepage = () => {
                     <span className="text-sm inline-block mt-1 animate-slideInFromLeft delay-1000">
                       Kelola dan pantau status kolam budidaya Anda dengan mudah
                     </span>
-                    <br />
-                    {getLastSyncTime() && (
-                      <span className="text-xs opacity-90 inline-block mt-1 animate-fadeIn delay-1200">
-                        Terakhir disinkronkan: {getLastSyncTime().toLocaleString("id-ID")}
-                      </span>
-                    )}
                   </p>
                 </div>
               </div>
